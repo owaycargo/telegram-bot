@@ -6,6 +6,7 @@ TEXTS = {
         'choose_role': 'Выберите роль:',
         'btn_client': '📦 Клиент',
         'btn_partner': '🏪 Партнёр (пункт приёма)',
+        'btn_driver': '🚗 Водитель',
         'btn_admin': '⚙️ Администратор',
         'back': '⬅️ Назад',
         'cancel': '❌ Отмена',
@@ -25,6 +26,7 @@ TEXTS = {
         'btn_track': '🔍 Отследить посылку',
         'btn_history': '📋 История посылок',
         'btn_calculator': '💰 Калькулятор цены',
+        'btn_support': '💬 Поддержка',
         'btn_change_lang': '🌐 Сменить язык',
 
         # Tracking
@@ -32,6 +34,7 @@ TEXTS = {
         'parcel_not_found': '❌ Посылка с трек-номером {tracking} не найдена.',
         'parcel_info': (
             '📦 Посылка: {tracking}\n'
+            '🌍 Страна: {country}\n'
             '📍 Статус: {status}\n'
             '🏪 Пункт приёма: {partner}\n'
             '⚖️ Вес: {weight} кг\n'
@@ -49,18 +52,64 @@ TEXTS = {
         'calc_enter_length': 'Введите длину (см):',
         'calc_enter_width': 'Введите ширину (см):',
         'calc_enter_height': 'Введите высоту (см):',
+        'calc_choose_country': '🌍 Выберите страну назначения:',
         'calc_result': (
             '💰 Расчёт стоимости:\n\n'
+            '🌍 Страна: {country}\n'
+            '💲 Тариф: ${rate}/кг\n'
             '⚖️ Фактический вес: {actual} кг\n'
             '📦 Объёмный вес: {vol} кг\n'
             '✅ Расчётный вес: {chargeable} кг\n'
-            '💵 Стоимость: ${price}'
+            '💵 Итого: ${price}'
         ),
 
-        # Statuses
-        'status_accepted': '✅ Принята',
-        'status_in_transit': '🚚 В пути',
-        'status_delivered': '✅ Доставлена',
+        # Support
+        'support_message': (
+            '💬 Поддержка OWAY Cargo\n\n'
+            '🌍 Клиенты из СНГ:\n'
+            'WhatsApp: +996 709 969621\n'
+            '📲 t.me/+996709969621\n\n'
+            '🇺🇸 Клиенты из США:\n'
+            'WhatsApp: +1 213 276 6898\n'
+            '📲 t.me/+12132766898'
+        ),
+
+        # Statuses — DIRECT (KG, KZ, UZ)
+        'status_accepted': '✅ Принята в США',
+        'status_in_transit': '✈️ В пути',
+        'status_arrived': '📍 Прибыла в страну назначения',
+        'status_customs': '🛃 Проходит таможенное оформление',
+        'status_ready': '📦 Готова к выдаче',
+        'status_delivered': '🏠 Доставлена',
+
+        # Statuses — TRANSIT (RU, BY) — Kyrgyzstan hidden
+        'status_transit_zone': '🔄 В транзитной зоне',
+        'status_arrived_moscow': '📍 Прибыла в Москву',
+        'status_with_driver': '🚚 Передана в доставку (СДЭК)',
+
+        # Country selection
+        'accept_choose_country': '🌍 Выберите страну назначения:',
+        'country_KG': '🇰🇬 Кыргызстан',
+        'country_KZ': '🇰🇿 Казахстан',
+        'country_UZ': '🇺🇿 Узбекистан',
+        'country_RU': '🇷🇺 Россия',
+        'country_BY': '🇧🇾 Беларусь',
+
+        # Timeline
+        'parcel_timeline': '🕐 История статусов:',
+        'timeline_line': '{icon} {status} — {date}',
+
+        # Admin status update
+        'btn_update_status': '🔄 Обновить статус посылки',
+        'admin_enter_tracking': 'Введите трек-номер посылки:',
+        'admin_parcel_not_found': '❌ Посылка {tracking} не найдена.',
+        'admin_choose_status': (
+            'Посылка: {tracking}\n'
+            'Текущий статус: {status}\n\n'
+            'Выберите новый статус:'
+        ),
+        'admin_status_updated': '✅ Статус посылки {tracking} обновлён:\n{status}',
+        'notify_status_changed': '📬 Статус вашей посылки {tracking} обновлён:\n{status}',
 
         # Partner
         'partner_enter_code': 'Введите код партнёра:',
@@ -146,6 +195,20 @@ TEXTS = {
 
         # Notifications
         'notify_accepted': '📦 Ваша посылка принята!\n\nТрек-номер: {tracking}\nПункт: {partner}\n⚖️ Вес: {weight} кг\n💰 Стоимость: ${price}',
+
+        # Driver
+        'driver_enter_code': 'Введите код водителя:',
+        'driver_invalid_code': '❌ Неверный код водителя.',
+        'driver_welcome': '🚗 Добро пожаловать, {name}!',
+        'driver_menu': '🚗 Меню водителя',
+        'btn_my_deliveries': '📋 Мои доставки',
+        'btn_mark_delivered': '✅ Отметить доставлено',
+        'no_deliveries': 'Нет посылок для доставки.',
+        'deliveries_list': '📋 Посылки для доставки:',
+        'driver_enter_tracking': 'Введите трек-номер доставленной посылки:',
+        'driver_delivered_ok': '✅ Посылка {tracking} отмечена как доставленная!',
+        'driver_parcel_not_found': '❌ Посылка {tracking} не найдена или уже доставлена.',
+        'notify_delivered': '🏠 Ваша посылка {tracking} доставлена! Спасибо, что выбрали OWAY Cargo.',
     },
 
     'en': {
@@ -155,6 +218,7 @@ TEXTS = {
         'choose_role': 'Choose your role:',
         'btn_client': '📦 Client',
         'btn_partner': '🏪 Partner (drop-off point)',
+        'btn_driver': '🚗 Driver',
         'btn_admin': '⚙️ Administrator',
         'back': '⬅️ Back',
         'cancel': '❌ Cancel',
@@ -174,6 +238,7 @@ TEXTS = {
         'btn_track': '🔍 Track parcel',
         'btn_history': '📋 Parcel history',
         'btn_calculator': '💰 Price calculator',
+        'btn_support': '💬 Support',
         'btn_change_lang': '🌐 Change language',
 
         # Tracking
@@ -181,6 +246,7 @@ TEXTS = {
         'parcel_not_found': '❌ Parcel with tracking number {tracking} not found.',
         'parcel_info': (
             '📦 Parcel: {tracking}\n'
+            '🌍 Country: {country}\n'
             '📍 Status: {status}\n'
             '🏪 Drop-off point: {partner}\n'
             '⚖️ Weight: {weight} kg\n'
@@ -198,18 +264,64 @@ TEXTS = {
         'calc_enter_length': 'Enter length (cm):',
         'calc_enter_width': 'Enter width (cm):',
         'calc_enter_height': 'Enter height (cm):',
+        'calc_choose_country': '🌍 Choose destination country:',
         'calc_result': (
             '💰 Price calculation:\n\n'
+            '🌍 Country: {country}\n'
+            '💲 Rate: ${rate}/kg\n'
             '⚖️ Actual weight: {actual} kg\n'
             '📦 Volumetric weight: {vol} kg\n'
             '✅ Chargeable weight: {chargeable} kg\n'
-            '💵 Price: ${price}'
+            '💵 Total: ${price}'
         ),
 
-        # Statuses
-        'status_accepted': '✅ Accepted',
-        'status_in_transit': '🚚 In transit',
-        'status_delivered': '✅ Delivered',
+        # Support
+        'support_message': (
+            '💬 OWAY Cargo Support\n\n'
+            '🌍 CIS clients:\n'
+            'WhatsApp: +996 709 969621\n'
+            '📲 t.me/+996709969621\n\n'
+            '🇺🇸 USA clients:\n'
+            'WhatsApp: +1 213 276 6898\n'
+            '📲 t.me/+12132766898'
+        ),
+
+        # Statuses — DIRECT (KG, KZ, UZ)
+        'status_accepted': '✅ Accepted in USA',
+        'status_in_transit': '✈️ In transit',
+        'status_arrived': '📍 Arrived in destination country',
+        'status_customs': '🛃 Customs clearance',
+        'status_ready': '📦 Ready for pickup',
+        'status_delivered': '🏠 Delivered',
+
+        # Statuses — TRANSIT (RU, BY)
+        'status_transit_zone': '🔄 In transit zone',
+        'status_arrived_moscow': '📍 Arrived in Moscow',
+        'status_with_driver': '🚚 Handed to courier (CDEK)',
+
+        # Country selection
+        'accept_choose_country': '🌍 Choose destination country:',
+        'country_KG': '🇰🇬 Kyrgyzstan',
+        'country_KZ': '🇰🇿 Kazakhstan',
+        'country_UZ': '🇺🇿 Uzbekistan',
+        'country_RU': '🇷🇺 Russia',
+        'country_BY': '🇧🇾 Belarus',
+
+        # Timeline
+        'parcel_timeline': '🕐 Status history:',
+        'timeline_line': '{icon} {status} — {date}',
+
+        # Admin status update
+        'btn_update_status': '🔄 Update parcel status',
+        'admin_enter_tracking': 'Enter parcel tracking number:',
+        'admin_parcel_not_found': '❌ Parcel {tracking} not found.',
+        'admin_choose_status': (
+            'Parcel: {tracking}\n'
+            'Current status: {status}\n\n'
+            'Choose new status:'
+        ),
+        'admin_status_updated': '✅ Parcel {tracking} status updated:\n{status}',
+        'notify_status_changed': '📬 Your parcel {tracking} status updated:\n{status}',
 
         # Partner
         'partner_enter_code': 'Enter partner code:',
@@ -295,6 +407,20 @@ TEXTS = {
 
         # Notifications
         'notify_accepted': '📦 Your parcel has been accepted!\n\nTracking: {tracking}\nPoint: {partner}\n⚖️ Weight: {weight} kg\n💰 Price: ${price}',
+
+        # Driver
+        'driver_enter_code': 'Enter driver code:',
+        'driver_invalid_code': '❌ Invalid driver code.',
+        'driver_welcome': '🚗 Welcome, {name}!',
+        'driver_menu': '🚗 Driver Menu',
+        'btn_my_deliveries': '📋 My deliveries',
+        'btn_mark_delivered': '✅ Mark as delivered',
+        'no_deliveries': 'No parcels to deliver.',
+        'deliveries_list': '📋 Parcels for delivery:',
+        'driver_enter_tracking': 'Enter tracking number of delivered parcel:',
+        'driver_delivered_ok': '✅ Parcel {tracking} marked as delivered!',
+        'driver_parcel_not_found': '❌ Parcel {tracking} not found or already delivered.',
+        'notify_delivered': '🏠 Your parcel {tracking} has been delivered! Thank you for choosing OWAY Cargo.',
     }
 }
 

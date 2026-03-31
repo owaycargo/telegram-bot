@@ -1,5 +1,6 @@
 import logging
 import threading
+import os
 from flask import Flask
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.ext import (
@@ -15,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = '7486227402:AAH0zRC_kgrdzgu1dr8yryHoId6GkDNCinM'
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '7486227402:AAH0zRC_kgrdzgu1dr8yryHoId6GkDNCinM')
 
 # ──────────────────── States ────────────────────
 (
@@ -31,7 +32,14 @@ BOT_TOKEN = '7486227402:AAH0zRC_kgrdzgu1dr8yryHoId6GkDNCinM'
     # Admin
     ADMIN_CODE_STATE, ADMIN_MENU,
     ADD_PARTNER_NAME, ADD_PARTNER_LOCATION, ADD_PARTNER_CODE,
-) = range(25)
+    ADMIN_UPDATE_TRACKING, ADMIN_UPDATE_STATUS,
+    # Partner accept
+    ACCEPT_COUNTRY,
+    # Driver
+    DRIVER_CODE_STATE, DRIVER_MENU, DRIVER_DELIVER,
+    # Calculator country
+    CLIENT_CALC_COUNTRY,
+) = range(32)
 
 # ──────────────────── Keyboards ────────────────────
 
@@ -42,7 +50,7 @@ def lang_keyboard():
 def role_keyboard(lang):
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_client')],
-        [t(lang, 'btn_partner')],
+        [t(lang, 'btn_partner'), t(lang, 'btn_driver')],
         [t(lang, 'btn_admin')],
     ], resize_keyboard=True, one_time_keyboard=True)
 
@@ -50,7 +58,15 @@ def role_keyboard(lang):
 def client_menu_keyboard(lang):
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_track'), t(lang, 'btn_history')],
-        [t(lang, 'btn_calculator'), t(lang, 'btn_change_lang')],
+        [t(lang, 'btn_calculator'), t(lang, 'btn_support')],
+        [t(lang, 'btn_change_lang'), t(lang, 'main_menu')],
+    ], resize_keyboard=True)
+
+
+def driver_menu_keyboard(lang):
+    return ReplyKeyboardMarkup([
+        [t(lang, 'btn_my_deliveries')],
+        [t(lang, 'btn_mark_delivered')],
         [t(lang, 'main_menu')],
     ], resize_keyboard=True)
 
@@ -67,8 +83,27 @@ def admin_menu_keyboard(lang):
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_network_stats')],
         [t(lang, 'btn_list_partners'), t(lang, 'btn_add_partner')],
+        [t(lang, 'btn_update_status')],
         [t(lang, 'main_menu')],
     ], resize_keyboard=True)
+
+
+def status_choice_keyboard(lang, route_type='DIRECT'):
+    keys = db.statuses_for_route(route_type)
+    labels = [status_label(lang, s) for s in keys]
+    rows = [[labels[i], labels[i+1]] if i+1 < len(labels) else [labels[i]]
+            for i in range(0, len(labels), 2)]
+    rows.append([t(lang, 'back')])
+    return ReplyKeyboardMarkup(rows, resize_keyboard=True, one_time_keyboard=True)
+
+
+def country_keyboard(lang):
+    return ReplyKeyboardMarkup([
+        [t(lang, 'country_KG'), t(lang, 'country_KZ')],
+        [t(lang, 'country_UZ')],
+        [t(lang, 'country_RU'), t(lang, 'country_BY')],
+        [t(lang, 'back')],
+    ], resize_keyboard=True, one_time_keyboard=True)
 
 
 def confirm_keyboard(lang):
@@ -100,13 +135,33 @@ def get_lang(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> str:
     return 'ru'
 
 
+STATUS_ICONS = {
+    'accepted': '✅',
+    'in_transit': '✈️',
+    'arrived': '📍',
+    'customs': '🛃',
+    'ready': '📦',
+    'transit_zone': '🔄',
+    'arrived_moscow': '📍',
+    'with_driver': '🚚',
+    'delivered': '🏠',
+}
+
+
 def status_label(lang: str, status: str) -> str:
-    mapping = {
-        'accepted': t(lang, 'status_accepted'),
-        'in_transit': t(lang, 'status_in_transit'),
-        'delivered': t(lang, 'status_delivered'),
-    }
-    return mapping.get(status, status)
+    return t(lang, f'status_{status}')
+
+
+def build_timeline(lang: str, events: list) -> str:
+    if not events:
+        return ''
+    lines = [t(lang, 'parcel_timeline')]
+    for ev in events:
+        icon = STATUS_ICONS.get(ev['status'], '•')
+        label = status_label(lang, ev['status'])
+        date = ev['created_at'][:16].replace('T', ' ')
+        lines.append(f"{icon} {label} — {date}")
+    return '\n'.join(lines)
 
 
 # ──────────────────── /start ────────────────────
@@ -168,6 +223,18 @@ async def role_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return PARTNER_MENU
         await update.message.reply_text(t(lang, 'partner_enter_code'), reply_markup=ReplyKeyboardRemove())
         return PARTNER_CODE
+
+    elif text in (t('ru', 'btn_driver'), t('en', 'btn_driver')):
+        driver = db.get_driver_by_telegram(update.effective_user.id)
+        if driver:
+            context.user_data['driver_id'] = driver['id']
+            await update.message.reply_text(
+                t(lang, 'driver_welcome', name=driver['name']),
+                reply_markup=driver_menu_keyboard(lang)
+            )
+            return DRIVER_MENU
+        await update.message.reply_text(t(lang, 'driver_enter_code'), reply_markup=ReplyKeyboardRemove())
+        return DRIVER_CODE_STATE
 
     elif text in (t('ru', 'btn_admin'), t('en', 'btn_admin')):
         await update.message.reply_text(t(lang, 'admin_enter_code'), reply_markup=ReplyKeyboardRemove())
@@ -257,6 +324,13 @@ async def client_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
         return CLIENT_CALC_W
 
+    elif text in (t('ru', 'btn_support'), t('en', 'btn_support')):
+        await update.message.reply_text(
+            t(lang, 'support_message'),
+            reply_markup=client_menu_keyboard(lang)
+        )
+        return CLIENT_MENU
+
     elif text in (t('ru', 'btn_change_lang'), t('en', 'btn_change_lang')):
         await update.message.reply_text(t(lang, 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
@@ -295,15 +369,23 @@ async def client_track(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     partner = db.get_partner_by_id(parcel['partner_id'])
     dims = f"{parcel['length']}×{parcel['width']}×{parcel['height']} cm"
+    country_code = parcel['destination_country'] or 'KG'
+    country_name = t(lang, f'country_{country_code}')
     info = t(lang, 'parcel_info',
              tracking=parcel['tracking'],
+             country=country_name,
              status=status_label(lang, parcel['status']),
              partner=partner['name'] if partner else '—',
              weight=parcel['chargeable_weight'],
              dims=dims,
              price=parcel['price'],
              date=parcel['created_at'][:10])
-    await update.message.reply_text(info, reply_markup=client_menu_keyboard(lang))
+
+    events = db.get_parcel_timeline(parcel['id'])
+    timeline = build_timeline(lang, events)
+    full_message = info + '\n\n' + timeline if timeline else info
+
+    await update.message.reply_text(full_message, reply_markup=client_menu_keyboard(lang))
 
     if parcel['photo_file_id']:
         await update.message.reply_photo(
@@ -360,18 +442,49 @@ async def calc_height(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     try:
         h = float(update.message.text.replace(',', '.'))
-        w_actual = context.user_data['calc_weight']
-        l = context.user_data['calc_l']
-        w = context.user_data['calc_w']
-        vol, chargeable, price = db.calculate_price(w_actual, l, w, h)
+        context.user_data['calc_h'] = h
         await update.message.reply_text(
-            t(lang, 'calc_result', actual=w_actual, vol=vol, chargeable=chargeable, price=price),
-            reply_markup=client_menu_keyboard(lang)
+            t(lang, 'calc_choose_country'),
+            reply_markup=country_keyboard(lang)
         )
-        return CLIENT_MENU
+        return CLIENT_CALC_COUNTRY
     except ValueError:
         await update.message.reply_text(t(lang, 'invalid_number'))
         return CLIENT_CALC_H
+
+
+async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'calc_enter_height'), reply_markup=back_keyboard(lang))
+        return CLIENT_CALC_H
+
+    country_map = {}
+    for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
+        country_map[t('ru', f'country_{code}')] = code
+        country_map[t('en', f'country_{code}')] = code
+
+    chosen = country_map.get(text)
+    if not chosen:
+        await update.message.reply_text(t(lang, 'invalid_input'), reply_markup=country_keyboard(lang))
+        return CLIENT_CALC_COUNTRY
+
+    w_actual = context.user_data['calc_weight']
+    l = context.user_data['calc_l']
+    w = context.user_data['calc_w']
+    h = context.user_data['calc_h']
+    vol, chargeable, price = db.calculate_price(w_actual, l, w, h, chosen)
+    rate = db.RATES.get(chosen, 12.0)
+    country_name = t(lang, f'country_{chosen}')
+    await update.message.reply_text(
+        t(lang, 'calc_result',
+          country=country_name, rate=rate,
+          actual=w_actual, vol=vol, chargeable=chargeable, price=price),
+        reply_markup=client_menu_keyboard(lang)
+    )
+    return CLIENT_MENU
 
 
 # ──────────────────── PARTNER AUTH ────────────────────
@@ -535,12 +648,41 @@ async def accept_client_phone(update: Update, context: ContextTypes.DEFAULT_TYPE
     lang = get_lang(context, update.effective_user.id)
     phone = update.message.text.strip()
     context.user_data['accept_client_phone'] = phone
+    await update.message.reply_text(
+        t(lang, 'accept_choose_country'),
+        reply_markup=country_keyboard(lang)
+    )
+    return ACCEPT_COUNTRY
+
+
+async def accept_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'accept_enter_client_phone'), reply_markup=back_keyboard(lang))
+        return ACCEPT_CLIENT_PHONE
+
+    # Map button label → country code
+    country_map = {}
+    for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
+        country_map[t('ru', f'country_{code}')] = code
+        country_map[t('en', f'country_{code}')] = code
+
+    chosen = country_map.get(text)
+    if not chosen:
+        await update.message.reply_text(t(lang, 'invalid_input'), reply_markup=country_keyboard(lang))
+        return ACCEPT_COUNTRY
+
+    context.user_data['accept_country'] = chosen
 
     w = context.user_data['accept_weight']
     l = context.user_data['accept_l']
     ww = context.user_data['accept_w']
     h = context.user_data['accept_h']
-    vol, chargeable, price = db.calculate_price(w, l, ww, h)
+    phone = context.user_data['accept_client_phone']
+    country = context.user_data.get('accept_country', 'KG')
+    vol, chargeable, price = db.calculate_price(w, l, ww, h, country)
     context.user_data['accept_vol'] = vol
     context.user_data['accept_chargeable'] = chargeable
     context.user_data['accept_price'] = price
@@ -584,6 +726,7 @@ async def accept_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
         width=context.user_data['accept_w'],
         height=context.user_data['accept_h'],
         photo_file_id=context.user_data.get('accept_photo'),
+        destination_country=context.user_data.get('accept_country', 'KG'),
     )
 
     await update.message.reply_text(
@@ -704,6 +847,10 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(t(lang, 'add_partner_name'), reply_markup=back_keyboard(lang))
         return ADD_PARTNER_NAME
 
+    elif text in (t('ru', 'btn_update_status'), t('en', 'btn_update_status')):
+        await update.message.reply_text(t(lang, 'admin_enter_tracking'), reply_markup=back_keyboard(lang))
+        return ADMIN_UPDATE_TRACKING
+
     elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
         return await start(update, context)
 
@@ -745,6 +892,166 @@ async def add_partner_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ADMIN_MENU
 
 
+# ──────────────────── DRIVER ────────────────────
+
+async def driver_code_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    code = update.message.text.strip()
+    driver = db.get_driver_by_code(code)
+    if not driver:
+        await update.message.reply_text(t(lang, 'driver_invalid_code'))
+        return DRIVER_CODE_STATE
+    db.link_driver_telegram(driver['id'], update.effective_user.id)
+    context.user_data['driver_id'] = driver['id']
+    await update.message.reply_text(
+        t(lang, 'driver_welcome', name=driver['name']),
+        reply_markup=driver_menu_keyboard(lang)
+    )
+    return DRIVER_MENU
+
+
+async def driver_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text
+
+    if text in (t('ru', 'btn_my_deliveries'), t('en', 'btn_my_deliveries')):
+        parcels = db.get_parcels_for_driver()
+        if not parcels:
+            await update.message.reply_text(t(lang, 'no_deliveries'), reply_markup=driver_menu_keyboard(lang))
+        else:
+            lines = [t(lang, 'deliveries_list')]
+            for p in parcels:
+                partner = db.get_partner_by_id(p['partner_id'])
+                country = t(lang, f"country_{p['destination_country'] or 'KG'}")
+                lines.append(f"• {p['tracking']} | {country} | {p['client_phone']} | {p['chargeable_weight']}кг")
+            await update.message.reply_text('\n'.join(lines), reply_markup=driver_menu_keyboard(lang))
+        return DRIVER_MENU
+
+    elif text in (t('ru', 'btn_mark_delivered'), t('en', 'btn_mark_delivered')):
+        await update.message.reply_text(t(lang, 'driver_enter_tracking'), reply_markup=back_keyboard(lang))
+        return DRIVER_DELIVER
+
+    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+        return await start(update, context)
+
+    else:
+        await update.message.reply_text(t(lang, 'driver_menu'), reply_markup=driver_menu_keyboard(lang))
+        return DRIVER_MENU
+
+
+async def driver_deliver(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'driver_menu'), reply_markup=driver_menu_keyboard(lang))
+        return DRIVER_MENU
+
+    parcel = db.get_parcel_by_tracking(text)
+    if not parcel or parcel['status'] != 'with_driver':
+        await update.message.reply_text(
+            t(lang, 'driver_parcel_not_found', tracking=text),
+            reply_markup=driver_menu_keyboard(lang)
+        )
+        return DRIVER_DELIVER
+
+    updated = db.mark_parcel_delivered(text)
+    await update.message.reply_text(
+        t(lang, 'driver_delivered_ok', tracking=text),
+        reply_markup=driver_menu_keyboard(lang)
+    )
+
+    # Notify client
+    if updated and updated['client_telegram_id']:
+        client = db.get_client(updated['client_telegram_id'])
+        client_lang = client['lang'] if client else 'ru'
+        try:
+            await context.bot.send_message(
+                chat_id=updated['client_telegram_id'],
+                text=t(client_lang, 'notify_delivered', tracking=text)
+            )
+        except Exception as e:
+            logger.warning(f"Could not notify client: {e}")
+
+    return DRIVER_MENU
+
+
+# ──────────────────── ADMIN STATUS UPDATE ────────────────────
+
+async def admin_update_tracking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
+        return ADMIN_MENU
+
+    parcel = db.get_parcel_by_tracking(text)
+    if not parcel:
+        await update.message.reply_text(
+            t(lang, 'admin_parcel_not_found', tracking=text),
+            reply_markup=back_keyboard(lang)
+        )
+        return ADMIN_UPDATE_TRACKING
+
+    context.user_data['update_tracking'] = parcel['tracking']
+    context.user_data['update_route_type'] = parcel['route_type'] or 'DIRECT'
+    await update.message.reply_text(
+        t(lang, 'admin_choose_status',
+          tracking=parcel['tracking'],
+          status=status_label(lang, parcel['status'])),
+        reply_markup=status_choice_keyboard(lang, parcel['route_type'] or 'DIRECT')
+    )
+    return ADMIN_UPDATE_STATUS
+
+
+async def admin_update_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
+        return ADMIN_MENU
+
+    # Match button label back to status key using the parcel's route type
+    route_type = context.user_data.get('update_route_type', 'DIRECT')
+    chosen_status = None
+    for s in db.statuses_for_route(route_type):
+        if text == status_label(lang, s):
+            chosen_status = s
+            break
+
+    if not chosen_status:
+        await update.message.reply_text(t(lang, 'invalid_input'), reply_markup=status_choice_keyboard(lang))
+        return ADMIN_UPDATE_STATUS
+
+    tracking = context.user_data.get('update_tracking')
+    parcel = db.update_parcel_status(tracking, chosen_status)
+
+    await update.message.reply_text(
+        t(lang, 'admin_status_updated',
+          tracking=tracking,
+          status=status_label(lang, chosen_status)),
+        reply_markup=admin_menu_keyboard(lang)
+    )
+
+    # Notify client
+    if parcel and parcel['client_telegram_id']:
+        client = db.get_client(parcel['client_telegram_id'])
+        client_lang = client['lang'] if client else 'ru'
+        try:
+            await context.bot.send_message(
+                chat_id=parcel['client_telegram_id'],
+                text=t(client_lang, 'notify_status_changed',
+                       tracking=tracking,
+                       status=status_label(client_lang, chosen_status))
+            )
+        except Exception as e:
+            logger.warning(f"Could not notify client: {e}")
+
+    return ADMIN_MENU
+
+
 # ──────────────────── FALLBACK ────────────────────
 
 async def fallback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -760,7 +1067,8 @@ def run_flask():
     def health():
         return 'OK', 200
 
-    app.run(host='0.0.0.0', port=8080, debug=False, use_reloader=False)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 
 # ──────────────────── MAIN ────────────────────
@@ -810,6 +1118,9 @@ def main():
             CLIENT_CALC_H: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, calc_height)
             ],
+            CLIENT_CALC_COUNTRY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, calc_country)
+            ],
             PARTNER_CODE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, partner_code)
             ],
@@ -835,6 +1146,9 @@ def main():
             ACCEPT_CLIENT_PHONE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, accept_client_phone)
             ],
+            ACCEPT_COUNTRY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, accept_country)
+            ],
             ACCEPT_CONFIRM: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, accept_confirm)
             ],
@@ -855,6 +1169,21 @@ def main():
             ],
             ADD_PARTNER_CODE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_partner_code)
+            ],
+            ADMIN_UPDATE_TRACKING: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_tracking)
+            ],
+            ADMIN_UPDATE_STATUS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_status)
+            ],
+            DRIVER_CODE_STATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, driver_code_handler)
+            ],
+            DRIVER_MENU: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, driver_menu_handler)
+            ],
+            DRIVER_DELIVER: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, driver_deliver)
             ],
         },
         fallbacks=[
