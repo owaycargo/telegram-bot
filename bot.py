@@ -57,10 +57,9 @@ def lang_keyboard():
 
 
 def role_keyboard(lang):
+    # Only show Client — staff use /admin /partner /driver commands
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_client')],
-        [t(lang, 'btn_partner'), t(lang, 'btn_driver')],
-        [t(lang, 'btn_admin')],
     ], resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -75,8 +74,8 @@ def order_menu_keyboard(lang):
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_track'), t(lang, 'btn_history')],
         [t(lang, 'btn_my_address'), t(lang, 'btn_shopping')],
-        [t(lang, 'btn_faq'), t(lang, 'btn_support')],
-        [t(lang, 'btn_miniapp')],
+        [t(lang, 'btn_calculator'), t(lang, 'btn_faq')],
+        [t(lang, 'btn_support'), t(lang, 'btn_miniapp')],
         [t(lang, 'btn_change_lang'), t(lang, 'main_menu')],
     ], resize_keyboard=True)
 
@@ -288,34 +287,6 @@ async def role_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(t(lang, 'client_enter_name'), reply_markup=ReplyKeyboardRemove())
         return CLIENT_NAME
 
-    elif text in (t('ru', 'btn_partner'), t('en', 'btn_partner')):
-        partner = db.get_partner_by_telegram(update.effective_user.id)
-        if partner:
-            context.user_data['partner_id'] = partner['id']
-            await update.message.reply_text(
-                t(lang, 'partner_welcome', name=partner['name'], location=partner['location']),
-                reply_markup=partner_menu_keyboard(lang)
-            )
-            return PARTNER_MENU
-        await update.message.reply_text(t(lang, 'partner_enter_code'), reply_markup=ReplyKeyboardRemove())
-        return PARTNER_CODE
-
-    elif text in (t('ru', 'btn_driver'), t('en', 'btn_driver')):
-        driver = db.get_driver_by_telegram(update.effective_user.id)
-        if driver:
-            context.user_data['driver_id'] = driver['id']
-            await update.message.reply_text(
-                t(lang, 'driver_welcome', name=driver['name']),
-                reply_markup=driver_menu_keyboard(lang)
-            )
-            return DRIVER_MENU
-        await update.message.reply_text(t(lang, 'driver_enter_code'), reply_markup=ReplyKeyboardRemove())
-        return DRIVER_CODE_STATE
-
-    elif text in (t('ru', 'btn_admin'), t('en', 'btn_admin')):
-        await update.message.reply_text(t(lang, 'admin_enter_code'), reply_markup=ReplyKeyboardRemove())
-        return ADMIN_CODE_STATE
-
     else:
         await update.message.reply_text(t(lang, 'choose_role'), reply_markup=role_keyboard(lang))
         return ROLE_SELECT
@@ -447,6 +418,11 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         await update.message.reply_text(t(lang, 'shopping_enter_request'))
         return SHOPPING_REQUEST
+
+    elif text in (t('ru', 'btn_calculator'), t('en', 'btn_calculator')):
+        await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
+        context.user_data['calc_return'] = 'ORDER'
+        return CLIENT_CALC_W
 
     elif text in (t('ru', 'btn_faq'), t('en', 'btn_faq')):
         await update.message.reply_text(
@@ -664,13 +640,12 @@ async def calc_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text in (t('ru', 'back'), t('en', 'back')):
         client = db.get_client(update.effective_user.id)
         calc_return = context.user_data.get('calc_return', 'SEND')
-        if calc_return == 'SEND':
-            phone = client['phone'] if client else '—'
-            await update.message.reply_text(t(lang, 'send_menu', phone=phone), reply_markup=send_menu_keyboard(lang))
-            return SEND_MENU
         phone = client['phone'] if client else '—'
-        await update.message.reply_text(t(lang, 'client_menu', phone=phone), reply_markup=client_menu_keyboard(lang))
-        return CLIENT_MENU
+        if calc_return == 'ORDER':
+            await update.message.reply_text(t(lang, 'order_menu', phone=phone), reply_markup=order_menu_keyboard(lang))
+            return ORDER_MENU
+        await update.message.reply_text(t(lang, 'send_menu', phone=phone), reply_markup=send_menu_keyboard(lang))
+        return SEND_MENU
     try:
         w = float(update.message.text.replace(',', '.'))
         context.user_data['calc_weight'] = w
@@ -745,8 +720,15 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rate = db.RATES.get(chosen, 12.0)
     country_name = t(lang, f'country_{chosen}')
 
-    reply_markup = send_menu_keyboard(lang) if calc_return == 'SEND' else client_menu_keyboard(lang)
-    return_state = SEND_MENU if calc_return == 'SEND' else CLIENT_MENU
+    if calc_return == 'ORDER':
+        reply_markup = order_menu_keyboard(lang)
+        return_state = ORDER_MENU
+    elif calc_return == 'SEND':
+        reply_markup = send_menu_keyboard(lang)
+        return_state = SEND_MENU
+    else:
+        reply_markup = client_menu_keyboard(lang)
+        return_state = CLIENT_MENU
 
     await update.message.reply_text(
         t(lang, 'calc_result',
@@ -1504,6 +1486,49 @@ async def admin_add_wu_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ADMIN_MENU
 
 
+# ──────────────────── STAFF ENTRY COMMANDS (/admin /partner /driver) ────────────────────
+
+async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Hidden command for admin access — not shown in bot menu."""
+    context.user_data.clear()
+    lang = get_lang(context, update.effective_user.id)
+    await update.message.reply_text(t(lang, 'admin_enter_code'), reply_markup=ReplyKeyboardRemove())
+    return ADMIN_CODE_STATE
+
+
+async def cmd_partner(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Hidden command for partner access — not shown in bot menu."""
+    context.user_data.clear()
+    lang = get_lang(context, update.effective_user.id)
+    # Check if already linked
+    partner = db.get_partner_by_telegram(update.effective_user.id)
+    if partner:
+        context.user_data['partner_id'] = partner['id']
+        await update.message.reply_text(
+            t(lang, 'partner_welcome', name=partner['name'], location=partner['location']),
+            reply_markup=partner_menu_keyboard(lang)
+        )
+        return PARTNER_MENU
+    await update.message.reply_text(t(lang, 'partner_enter_code'), reply_markup=ReplyKeyboardRemove())
+    return PARTNER_CODE
+
+
+async def cmd_driver(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Hidden command for driver access — not shown in bot menu."""
+    context.user_data.clear()
+    lang = get_lang(context, update.effective_user.id)
+    driver = db.get_driver_by_telegram(update.effective_user.id)
+    if driver:
+        context.user_data['driver_id'] = driver['id']
+        await update.message.reply_text(
+            t(lang, 'driver_welcome', name=driver['name']),
+            reply_markup=driver_menu_keyboard(lang)
+        )
+        return DRIVER_MENU
+    await update.message.reply_text(t(lang, 'driver_enter_code'), reply_markup=ReplyKeyboardRemove())
+    return DRIVER_CODE_STATE
+
+
 # ──────────────────── FALLBACK ────────────────────
 
 async def fallback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1601,7 +1626,12 @@ def main():
     application = Application.builder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[
+            CommandHandler('start', start),
+            CommandHandler('admin', cmd_admin),
+            CommandHandler('partner', cmd_partner),
+            CommandHandler('driver', cmd_driver),
+        ],
         states={
             LANG_SELECT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, lang_select)
