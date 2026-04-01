@@ -9,8 +9,8 @@ DB_PATH = 'oway_cargo.db'
 ADMIN_CODE = 'OWAYADMIN2024'
 
 # Countries and their route types
-DIRECT_COUNTRIES = ['KG', 'KZ', 'UZ']   # Kyrgyzstan, Kazakhstan, Uzbekistan
-TRANSIT_COUNTRIES = ['RU', 'BY']          # Russia, Belarus — route through Bishkek, hidden
+DIRECT_COUNTRIES = ['KG', 'KZ', 'UZ']
+TRANSIT_COUNTRIES = ['RU', 'BY']
 
 COUNTRY_NAMES = {
     'KG': '🇰🇬 Кыргызстан',
@@ -24,7 +24,6 @@ COUNTRY_NAMES = {
 DIRECT_STATUSES = ['accepted', 'in_transit', 'arrived', 'customs', 'ready', 'delivered']
 TRANSIT_STATUSES = ['accepted', 'in_transit', 'transit_zone', 'arrived_moscow', 'with_driver', 'delivered']
 
-
 # Pricing per kg by country (flat rate)
 RATES = {
     'KG': 12.0,
@@ -35,6 +34,18 @@ RATES = {
 }
 
 DEFAULT_DRIVER_CODE = 'DRIVER001'
+
+# Default US warehouse address (admin can override via config)
+DEFAULT_US_ADDRESS = (
+    "OWAY Cargo Warehouse\n"
+    "4305 Hazel Ave\n"
+    "Fair Oaks, CA 95628\n"
+    "United States\n"
+    "Tel: +1 213 276 6898"
+)
+
+# Default Mini App URL placeholder
+DEFAULT_MINIAPP_URL = 'https://telegram-bot-production-a466.up.railway.app/miniapp'
 
 
 def route_type_for_country(country_code: str) -> str:
@@ -62,6 +73,8 @@ def init_db():
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         lang TEXT DEFAULT 'ru',
+        client_type TEXT DEFAULT NULL,
+        website_id TEXT DEFAULT NULL,
         created_at TEXT DEFAULT (datetime('now'))
     )''')
 
@@ -95,13 +108,6 @@ def init_db():
         FOREIGN KEY (partner_id) REFERENCES partners(id)
     )''')
 
-    # Migrations for existing databases
-    for col, default in [('destination_country', "'KG'"), ('route_type', "'DIRECT'")]:
-        try:
-            c.execute(f"ALTER TABLE parcels ADD COLUMN {col} TEXT DEFAULT {default}")
-        except sqlite3.OperationalError:
-            pass
-
     c.execute('''CREATE TABLE IF NOT EXISTS parcel_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         parcel_id INTEGER NOT NULL,
@@ -119,11 +125,54 @@ def init_db():
         created_at TEXT DEFAULT (datetime('now'))
     )''')
 
-    # Seed demo partner and default driver
+    # Config table — key/value store for admin-managed settings
+    c.execute('''CREATE TABLE IF NOT EXISTS config (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )''')
+
+    # Website users — registered on owaycargo.com, verified by ID
+    c.execute('''CREATE TABLE IF NOT EXISTS website_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        website_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        telegram_id INTEGER DEFAULT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+    )''')
+
+    # Shopping assistant requests
+    c.execute('''CREATE TABLE IF NOT EXISTS shopping_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_telegram_id INTEGER NOT NULL,
+        client_name TEXT,
+        client_phone TEXT,
+        request_text TEXT NOT NULL,
+        status TEXT DEFAULT 'new',
+        created_at TEXT DEFAULT (datetime('now'))
+    )''')
+
+    # Migrations for existing databases
+    for col, default in [('destination_country', "'KG'"), ('route_type', "'DIRECT'")]:
+        try:
+            c.execute(f"ALTER TABLE parcels ADD COLUMN {col} TEXT DEFAULT {default}")
+        except sqlite3.OperationalError:
+            pass
+
+    for col in [('client_type', 'NULL'), ('website_id', 'NULL')]:
+        try:
+            c.execute(f"ALTER TABLE clients ADD COLUMN {col[0]} TEXT DEFAULT {col[1]}")
+        except sqlite3.OperationalError:
+            pass
+
+    # Seed defaults
     c.execute("INSERT OR IGNORE INTO partners (code, name, location) VALUES (?, ?, ?)",
               ('DEMO001', 'Demo Point', 'Demo City, Demo Street 1'))
     c.execute("INSERT OR IGNORE INTO drivers (code, name) VALUES (?, ?)",
               (DEFAULT_DRIVER_CODE, 'Driver 1'))
+    c.execute("INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)",
+              ('us_warehouse_address', DEFAULT_US_ADDRESS))
+    c.execute("INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)",
+              ('miniapp_url', DEFAULT_MINIAPP_URL))
 
     conn.commit()
     conn.close()
@@ -143,6 +192,22 @@ def calculate_price(weight: float, length: float, width: float, height: float, c
     return round(volumetric, 2), round(chargeable, 2), round(price, 2)
 
 
+# ──────────────────── CONFIG ────────────────────
+
+def get_config(key: str, default: str = '') -> str:
+    conn = get_conn()
+    row = conn.execute('SELECT value FROM config WHERE key=?', (key,)).fetchone()
+    conn.close()
+    return row['value'] if row else default
+
+
+def set_config(key: str, value: str):
+    conn = get_conn()
+    conn.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?,?)', (key, value))
+    conn.commit()
+    conn.close()
+
+
 # ──────────────────── CLIENTS ────────────────────
 
 def get_client(telegram_id: int) -> Optional[sqlite3.Row]:
@@ -158,7 +223,7 @@ def register_client(telegram_id: int, name: str, phone: str, lang: str = 'ru') -
         'INSERT OR REPLACE INTO clients (telegram_id, name, phone, lang) VALUES (?,?,?,?)',
         (telegram_id, name, phone, lang)
     )
-    # Link any existing parcels that were accepted before client registered
+    # Link any existing parcels accepted before client registered
     normalized = phone.replace(' ', '').replace('-', '')
     conn.execute(
         """UPDATE parcels SET client_telegram_id=?
@@ -172,6 +237,20 @@ def register_client(telegram_id: int, name: str, phone: str, lang: str = 'ru') -
     return row
 
 
+def set_client_type(telegram_id: int, client_type: str):
+    conn = get_conn()
+    conn.execute('UPDATE clients SET client_type=? WHERE telegram_id=?', (client_type, telegram_id))
+    conn.commit()
+    conn.close()
+
+
+def set_client_website_id(telegram_id: int, website_id: str):
+    conn = get_conn()
+    conn.execute('UPDATE clients SET website_id=? WHERE telegram_id=?', (website_id, telegram_id))
+    conn.commit()
+    conn.close()
+
+
 def update_client_lang(telegram_id: int, lang: str):
     conn = get_conn()
     conn.execute('UPDATE clients SET lang=? WHERE telegram_id=?', (lang, telegram_id))
@@ -182,9 +261,91 @@ def update_client_lang(telegram_id: int, lang: str):
 def get_client_by_phone(phone: str) -> Optional[sqlite3.Row]:
     conn = get_conn()
     normalized = phone.replace(' ', '').replace('-', '')
-    row = conn.execute('SELECT * FROM clients WHERE replace(replace(phone," ",""),"-","")=?', (normalized,)).fetchone()
+    row = conn.execute(
+        'SELECT * FROM clients WHERE replace(replace(phone," ",""),"-","")=?', (normalized,)
+    ).fetchone()
     conn.close()
     return row
+
+
+def get_all_clients():
+    conn = get_conn()
+    rows = conn.execute('SELECT * FROM clients ORDER BY created_at DESC').fetchall()
+    conn.close()
+    return rows
+
+
+# ──────────────────── WEBSITE USERS ────────────────────
+
+def get_website_user(website_id: str) -> Optional[sqlite3.Row]:
+    conn = get_conn()
+    row = conn.execute('SELECT * FROM website_users WHERE website_id=?', (website_id.upper(),)).fetchone()
+    conn.close()
+    return row
+
+
+def add_website_user(website_id: str, name: str) -> bool:
+    conn = get_conn()
+    try:
+        conn.execute('INSERT INTO website_users (website_id, name) VALUES (?,?)',
+                     (website_id.upper(), name))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False
+
+
+def link_website_user_telegram(website_id: str, telegram_id: int):
+    conn = get_conn()
+    conn.execute('UPDATE website_users SET telegram_id=? WHERE website_id=?',
+                 (telegram_id, website_id.upper()))
+    conn.commit()
+    conn.close()
+
+
+def get_all_website_users():
+    conn = get_conn()
+    rows = conn.execute('SELECT * FROM website_users ORDER BY created_at DESC').fetchall()
+    conn.close()
+    return rows
+
+
+# ──────────────────── SHOPPING REQUESTS ────────────────────
+
+def create_shopping_request(client_telegram_id: int, client_name: str,
+                             client_phone: str, request_text: str) -> sqlite3.Row:
+    conn = get_conn()
+    conn.execute(
+        '''INSERT INTO shopping_requests
+           (client_telegram_id, client_name, client_phone, request_text)
+           VALUES (?,?,?,?)''',
+        (client_telegram_id, client_name, client_phone, request_text)
+    )
+    conn.commit()
+    row = conn.execute(
+        'SELECT * FROM shopping_requests WHERE client_telegram_id=? ORDER BY id DESC LIMIT 1',
+        (client_telegram_id,)
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def get_new_shopping_requests():
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM shopping_requests WHERE status='new' ORDER BY created_at ASC"
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def close_shopping_request(request_id: int):
+    conn = get_conn()
+    conn.execute("UPDATE shopping_requests SET status='done' WHERE id=?", (request_id,))
+    conn.commit()
+    conn.close()
 
 
 # ──────────────────── PARTNERS ────────────────────
@@ -285,7 +446,6 @@ def get_parcel_timeline(parcel_id: int) -> list:
 
 
 def update_parcel_status(tracking: str, new_status: str, note: str = None) -> Optional[sqlite3.Row]:
-    """Update parcel status and log the event. Returns updated parcel row or None if not found."""
     conn = get_conn()
     parcel = conn.execute('SELECT * FROM parcels WHERE tracking=?', (tracking.upper(),)).fetchone()
     if not parcel:
@@ -362,16 +522,16 @@ def get_partner_stats(partner_id: int) -> dict:
 def get_network_stats() -> dict:
     since = (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
     conn = get_conn()
-    rows = conn.execute(
-        'SELECT * FROM parcels WHERE created_at>=?', (since,)
-    ).fetchall()
+    rows = conn.execute('SELECT * FROM parcels WHERE created_at>=?', (since,)).fetchall()
     total = len(rows)
-    in_transit_statuses = {'in_transit', 'arrived', 'customs', 'ready', 'transit_zone', 'arrived_moscow', 'with_driver'}
+    in_transit_statuses = {
+        'in_transit', 'arrived', 'customs', 'ready',
+        'transit_zone', 'arrived_moscow', 'with_driver'
+    }
     in_transit = sum(1 for r in rows if r['status'] in in_transit_statuses)
     delivered = sum(1 for r in rows if r['status'] == 'delivered')
     weight = sum(r['chargeable_weight'] for r in rows)
     revenue = sum(r['price'] for r in rows)
-
     active_partners = conn.execute(
         'SELECT COUNT(DISTINCT partner_id) as cnt FROM parcels WHERE created_at>=?', (since,)
     ).fetchone()['cnt']
@@ -424,7 +584,6 @@ def link_driver_telegram(driver_id: int, telegram_id: int):
 
 
 def get_parcels_for_driver() -> list:
-    """All parcels currently with driver (ready to deliver)."""
     conn = get_conn()
     rows = conn.execute(
         "SELECT * FROM parcels WHERE status='with_driver' ORDER BY created_at ASC"
