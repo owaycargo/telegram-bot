@@ -37,11 +37,8 @@ DEFAULT_DRIVER_CODE = 'DRIVER001'
 
 # Default US warehouse address (admin can override via config)
 DEFAULT_US_ADDRESS = (
-    "OWAY Cargo Warehouse\n"
-    "4305 Hazel Ave\n"
-    "Fair Oaks, CA 95628\n"
-    "United States\n"
-    "Tel: +1 213 276 6898"
+    "Адрес склада будет добавлен администратором.\n"
+    "Свяжитесь с поддержкой: +1 213 276 6898"
 )
 
 # Default Mini App URL placeholder
