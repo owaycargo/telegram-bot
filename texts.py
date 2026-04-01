@@ -21,13 +21,36 @@ TEXTS = {
         'client_registered': '✅ Регистрация завершена! Добро пожаловать, {name}!',
         'client_already_registered': '✅ Вы уже зарегистрированы. Добро пожаловать, {name}!',
 
-        # Client menu
-        'client_menu': '📦 Меню клиента\nВаш телефон: {phone}',
+        # Client type selection
+        'client_type_select': (
+            '👋 Добро пожаловать в OWAY Cargo!\n\n'
+            'Выберите, что вы хотите сделать:\n\n'
+            '🛒 Заказать из США — купить товар в США и получить в своей стране\n\n'
+            '📦 Отправить из США — вы находитесь в США и хотите отправить посылку в СНГ'
+        ),
+        'btn_order_type': '🛒 Заказать из США',
+        'btn_send_type': '📦 Отправить из США',
+
+        # Order menu (CIS clients ordering from USA)
+        'order_menu': '🛒 Заказать из США\nВаш телефон: {phone}',
+        'btn_my_address': '🏠 Мой адрес в США',
+        'btn_shopping': '🛍️ Шопинг-помощник',
+        'btn_faq': '❓ Частые вопросы',
+        'btn_miniapp': '🌐 Открыть приложение',
+
+        # Send menu (USA clients sending to CIS)
+        'send_menu': '📦 Отправить из США\nВаш телефон: {phone}',
+        'btn_find_dropoff': '📍 Пункты приёма',
+
+        # Shared client menu buttons
         'btn_track': '🔍 Отследить посылку',
         'btn_history': '📋 История посылок',
         'btn_calculator': '💰 Калькулятор цены',
         'btn_support': '💬 Поддержка',
         'btn_change_lang': '🌐 Сменить язык',
+
+        # Legacy client_menu (kept for fallback)
+        'client_menu': '📦 Меню клиента\nВаш телефон: {phone}',
 
         # Tracking
         'enter_tracking': 'Введите трек-номер:',
@@ -111,6 +134,114 @@ TEXTS = {
         'admin_status_updated': '✅ Статус посылки {tracking} обновлён:\n{status}',
         'notify_status_changed': '📬 Статус вашей посылки {tracking} обновлён:\n{status}',
 
+        # US Address verification
+        'address_enter_id': (
+            '🔑 Введите ваш ID с сайта owaycargo.com\n\n'
+            'Если вы ещё не зарегистрированы на сайте — перейдите на owaycargo.com и создайте аккаунт.\n'
+            'После регистрации ваш ID будет доступен в личном кабинете.'
+        ),
+        'address_not_found': (
+            '❌ ID {website_id} не найден в системе.\n\n'
+            'Убедитесь, что вы правильно ввели ID, или обратитесь в поддержку:\n'
+            'WhatsApp: +996 709 969621'
+        ),
+        'your_us_address': (
+            '🏠 Ваш адрес для получения посылок в США:\n\n'
+            '{address}\n\n'
+            '📝 Укажите этот адрес при оформлении заказов в американских интернет-магазинах.\n'
+            '📦 После доставки в наш склад мы отправим посылку на ваш адрес в СНГ.'
+        ),
+        'address_already_set': (
+            '✅ Ваш аккаунт привязан к сайту.\n\n'
+            '🏠 Ваш адрес в США:\n\n{address}'
+        ),
+
+        # Shopping assistant
+        'shopping_intro': (
+            '🛍️ Шопинг-помощник OWAY Cargo\n\n'
+            'Мы купим любой товар из США за вас!\n\n'
+            'Укажите в вашем сообщении:\n'
+            '• Ссылку на товар или название магазина\n'
+            '• Описание товара (цвет, размер, модель)\n'
+            '• Желаемый бюджет (в $)\n\n'
+            '💰 Комиссия за услугу: 10% от стоимости товара\n'
+            '⏱ Ответ менеджера: в течение 24 часов'
+        ),
+        'shopping_enter_request': '✍️ Опишите ваш запрос подробно:',
+        'shopping_received': (
+            '✅ Ваш запрос принят!\n\n'
+            'Наш менеджер свяжется с вами по номеру {phone} в ближайшее время.\n\n'
+            'Спасибо за доверие OWAY Cargo! 🚚'
+        ),
+        'shopping_notify_admin': (
+            '🛍️ Новый запрос шопинг-помощника!\n\n'
+            '👤 Клиент: {name}\n'
+            '📱 Телефон: {phone}\n'
+            '📝 Запрос:\n{request}'
+        ),
+
+        # FAQ for ORDER clients (CIS)
+        'faq_order': (
+            '❓ Частые вопросы — Заказать из США\n\n'
+            '1️⃣ Как получить адрес в США?\n'
+            'Зарегистрируйтесь на owaycargo.com → получите личный ID → '
+            'введите его в боте через «Мой адрес в США». Адрес склада будет сразу показан.\n\n'
+            '2️⃣ Как отследить посылку?\n'
+            'Нажмите «Отследить посылку», введите трек-номер. '
+            'Трек-номер вы получите при уведомлении о приёме.\n\n'
+            '3️⃣ Сколько стоит доставка?\n'
+            '🇰🇬 Кыргызстан, 🇰🇿 Казахстан, 🇺🇿 Узбекистан: $12/кг\n'
+            '🇷🇺 Россия, 🇧🇾 Беларусь: $18/кг\n'
+            'Расчёт по объёмному или фактическому весу (максимум из двух).\n\n'
+            '4️⃣ Как долго идёт доставка?\n'
+            'КР/КЗ/УЗ: 14–21 рабочий день.\n'
+            'Россия/Беларусь: 21–30 рабочих дней.\n\n'
+            '5️⃣ Что такое Шопинг-помощник?\n'
+            'Наш менеджер купит любой товар из США за вас. '
+            'Комиссия — 10% от стоимости товара. '
+            'Напишите запрос через «Шопинг-помощник».\n\n'
+            '6️⃣ Какие товары запрещены?\n'
+            'Нельзя отправлять: оружие, наркотики, опасные вещества, '
+            'скоропортящиеся продукты, живые животные, '
+            'товары с ограничениями на ввоз.\n\n'
+            '7️⃣ Контакты поддержки:\n'
+            '🌍 СНГ: WhatsApp +996 709 969621\n'
+            '🇺🇸 США: WhatsApp +1 213 276 6898'
+        ),
+
+        # FAQ for SEND clients (USA)
+        'faq_send': (
+            '❓ Частые вопросы — Отправить из США\n\n'
+            '1️⃣ Где сдать посылку?\n'
+            'Найдите ближайший пункт через «Пункты приёма» в меню. '
+            'Сотрудник пункта примет посылку, взвесит и выдаст трек-номер.\n\n'
+            '2️⃣ Сколько стоит доставка?\n'
+            '🇰🇬 Кыргызстан, 🇰🇿 Казахстан, 🇺🇿 Узбекистан: $12/кг\n'
+            '🇷🇺 Россия, 🇧🇾 Беларусь: $18/кг\n'
+            'Используйте «Калькулятор» для точного расчёта.\n\n'
+            '3️⃣ Какие документы нужны?\n'
+            'Нужен только номер телефона получателя. '
+            'Для дорогостоящих товаров может потребоваться чек/инвойс.\n\n'
+            '4️⃣ Как упаковать посылку?\n'
+            'Упакуйте надёжно: коробка, скотч, пузырчатая плёнка для хрупких вещей. '
+            'Одежду и мягкие вещи можно в пакет. '
+            'Пункт помогает с упаковкой за доп. плату.\n\n'
+            '5️⃣ Какие товары запрещены к отправке?\n'
+            'Нельзя: оружие, боеприпасы, жидкости >100 мл (авиа), '
+            'аэрозоли, опасные химикаты, скоропортящееся.\n\n'
+            '6️⃣ Как получатель отслеживает посылку?\n'
+            'Получатель регистрируется в этом же боте и вводит трек-номер '
+            'в разделе «Отследить посылку». При каждом изменении статуса приходит уведомление.\n\n'
+            '7️⃣ Контакты поддержки:\n'
+            '🇺🇸 США: WhatsApp +1 213 276 6898\n'
+            '🌍 СНГ: WhatsApp +996 709 969621'
+        ),
+
+        # Drop-off points
+        'dropoffs_list': '📍 Пункты приёма посылок в США:',
+        'dropoff_line': '• {name} — {location}',
+        'no_dropoffs': 'Пункты приёма в США пока не добавлены.\nСвяжитесь с нами: +1 213 276 6898',
+
         # Partner
         'partner_enter_code': 'Введите код партнёра:',
         'partner_invalid_code': '❌ Неверный код партнёра.',
@@ -131,6 +262,7 @@ TEXTS = {
         'accept_confirm': (
             '✅ Подтвердите приём посылки:\n\n'
             '📱 Клиент: {phone}\n'
+            '🌍 Страна: {country}\n'
             '⚖️ Вес: {weight} кг\n'
             '📏 Размеры: {l}×{w}×{h} см\n'
             '📦 Объёмный вес: {vol} кг\n'
@@ -169,6 +301,10 @@ TEXTS = {
         'btn_network_stats': '📊 Статистика сети',
         'btn_list_partners': '🏪 Список партнёров',
         'btn_add_partner': '➕ Добавить партнёра',
+        'btn_broadcast': '📢 Рассылка клиентам',
+        'btn_set_address': '🏠 Изменить адрес склада',
+        'btn_add_website_user': '👤 Добавить ID пользователя',
+        'btn_view_requests': '🛍️ Заявки шопинга',
 
         # Admin stats
         'network_stats': (
@@ -193,8 +329,39 @@ TEXTS = {
         'partner_code_exists': '❌ Такой код уже существует.',
         'partner_added': '✅ Партнёр добавлен!\nНазвание: {name}\nАдрес: {location}\nКод: {code}',
 
+        # Admin broadcast
+        'broadcast_enter_msg': (
+            '📢 Введите текст рассылки:\n\n'
+            'Сообщение будет отправлено всем зарегистрированным клиентам.'
+        ),
+        'broadcast_sent': '✅ Рассылка выполнена!\nОтправлено: {sent} | Ошибок: {failed}',
+
+        # Admin set warehouse address
+        'set_address_enter': (
+            '🏠 Введите новый адрес склада в США:\n\n'
+            'Текущий адрес:\n{current}'
+        ),
+        'address_updated': '✅ Адрес склада обновлён!',
+
+        # Admin add website user
+        'add_wu_id_enter': '👤 Введите ID пользователя с сайта owaycargo.com:',
+        'add_wu_name_enter': 'Введите имя пользователя (ID: {website_id}):',
+        'wu_added': '✅ Пользователь добавлен!\nID: {website_id}\nИмя: {name}',
+        'wu_id_taken': '❌ Пользователь с таким ID уже существует.',
+
+        # Admin view shopping requests
+        'view_requests_empty': '🛍️ Новых заявок шопинга нет.',
+        'view_requests_header': '🛍️ Новые заявки шопинга:\n',
+        'request_line': '#{id} | {client} | {phone}\n📝 {text}\n📅 {date}\n',
+
         # Notifications
-        'notify_accepted': '📦 Ваша посылка принята!\n\nТрек-номер: {tracking}\nПункт: {partner}\n⚖️ Вес: {weight} кг\n💰 Стоимость: ${price}',
+        'notify_accepted': (
+            '📦 Ваша посылка принята!\n\n'
+            'Трек-номер: {tracking}\n'
+            'Пункт: {partner}\n'
+            '⚖️ Вес: {weight} кг\n'
+            '💰 Стоимость: ${price}'
+        ),
 
         # Driver
         'driver_enter_code': 'Введите код водителя:',
@@ -233,13 +400,36 @@ TEXTS = {
         'client_registered': '✅ Registration complete! Welcome, {name}!',
         'client_already_registered': '✅ You are already registered. Welcome, {name}!',
 
-        # Client menu
-        'client_menu': '📦 Client Menu\nYour phone: {phone}',
+        # Client type selection
+        'client_type_select': (
+            '👋 Welcome to OWAY Cargo!\n\n'
+            'What would you like to do?\n\n'
+            '🛒 Order from USA — buy goods in the USA and receive them in your country\n\n'
+            '📦 Send from USA — you are in the USA and want to send a package to CIS countries'
+        ),
+        'btn_order_type': '🛒 Order from USA',
+        'btn_send_type': '📦 Send from USA',
+
+        # Order menu (CIS clients)
+        'order_menu': '🛒 Order from USA\nYour phone: {phone}',
+        'btn_my_address': '🏠 My US Address',
+        'btn_shopping': '🛍️ Shopping Assistant',
+        'btn_faq': '❓ FAQ',
+        'btn_miniapp': '🌐 Open App',
+
+        # Send menu (USA clients)
+        'send_menu': '📦 Send from USA\nYour phone: {phone}',
+        'btn_find_dropoff': '📍 Drop-off Points',
+
+        # Shared buttons
         'btn_track': '🔍 Track parcel',
         'btn_history': '📋 Parcel history',
         'btn_calculator': '💰 Price calculator',
         'btn_support': '💬 Support',
         'btn_change_lang': '🌐 Change language',
+
+        # Legacy
+        'client_menu': '📦 Client Menu\nYour phone: {phone}',
 
         # Tracking
         'enter_tracking': 'Enter tracking number:',
@@ -323,6 +513,113 @@ TEXTS = {
         'admin_status_updated': '✅ Parcel {tracking} status updated:\n{status}',
         'notify_status_changed': '📬 Your parcel {tracking} status updated:\n{status}',
 
+        # US Address verification
+        'address_enter_id': (
+            '🔑 Enter your ID from owaycargo.com\n\n'
+            'If you have not registered on the website yet, go to owaycargo.com and create an account.\n'
+            'After registration your ID will be available in your personal account.'
+        ),
+        'address_not_found': (
+            '❌ ID {website_id} was not found in our system.\n\n'
+            'Please check your ID or contact support:\n'
+            'WhatsApp: +1 213 276 6898'
+        ),
+        'your_us_address': (
+            '🏠 Your US address for receiving packages:\n\n'
+            '{address}\n\n'
+            '📝 Use this address when placing orders at American online stores.\n'
+            '📦 Once your package arrives at our warehouse we will forward it to your CIS address.'
+        ),
+        'address_already_set': (
+            '✅ Your account is linked to the website.\n\n'
+            '🏠 Your US Address:\n\n{address}'
+        ),
+
+        # Shopping assistant
+        'shopping_intro': (
+            '🛍️ OWAY Cargo Shopping Assistant\n\n'
+            'We will buy any item from the USA for you!\n\n'
+            'Please include in your message:\n'
+            '• Link to the product or store name\n'
+            '• Product description (color, size, model)\n'
+            '• Desired budget (in $)\n\n'
+            '💰 Service fee: 10% of product cost\n'
+            '⏱ Manager response: within 24 hours'
+        ),
+        'shopping_enter_request': '✍️ Describe your request in detail:',
+        'shopping_received': (
+            '✅ Your request has been received!\n\n'
+            'Our manager will contact you at {phone} shortly.\n\n'
+            'Thank you for choosing OWAY Cargo! 🚚'
+        ),
+        'shopping_notify_admin': (
+            '🛍️ New Shopping Assistant request!\n\n'
+            '👤 Client: {name}\n'
+            '📱 Phone: {phone}\n'
+            '📝 Request:\n{request}'
+        ),
+
+        # FAQ for ORDER clients (CIS)
+        'faq_order': (
+            '❓ FAQ — Order from USA\n\n'
+            '1️⃣ How do I get a US address?\n'
+            'Register at owaycargo.com → get your personal ID → '
+            'enter it in the bot via "My US Address". The warehouse address will be shown immediately.\n\n'
+            '2️⃣ How do I track my parcel?\n'
+            'Press "Track parcel" and enter your tracking number. '
+            'You will receive the tracking number when the parcel is accepted.\n\n'
+            '3️⃣ How much does delivery cost?\n'
+            '🇰🇬 Kyrgyzstan, 🇰🇿 Kazakhstan, 🇺🇿 Uzbekistan: $12/kg\n'
+            '🇷🇺 Russia, 🇧🇾 Belarus: $18/kg\n'
+            'Calculated by volumetric or actual weight (whichever is higher).\n\n'
+            '4️⃣ How long does delivery take?\n'
+            'KG/KZ/UZ: 14–21 business days.\n'
+            'Russia/Belarus: 21–30 business days.\n\n'
+            '5️⃣ What is the Shopping Assistant?\n'
+            'Our manager will buy any product from the USA for you. '
+            'Commission: 10% of the product price. '
+            'Send your request via "Shopping Assistant".\n\n'
+            '6️⃣ What items are prohibited?\n'
+            'Prohibited: weapons, drugs, hazardous materials, '
+            'perishable food, live animals, import-restricted items.\n\n'
+            '7️⃣ Support contacts:\n'
+            '🌍 CIS: WhatsApp +996 709 969621\n'
+            '🇺🇸 USA: WhatsApp +1 213 276 6898'
+        ),
+
+        # FAQ for SEND clients (USA)
+        'faq_send': (
+            '❓ FAQ — Send from USA\n\n'
+            '1️⃣ Where can I drop off my parcel?\n'
+            'Find the nearest drop-off point via "Drop-off Points" in the menu. '
+            'The staff will accept your parcel, weigh it and provide a tracking number.\n\n'
+            '2️⃣ How much does shipping cost?\n'
+            '🇰🇬 Kyrgyzstan, 🇰🇿 Kazakhstan, 🇺🇿 Uzbekistan: $12/kg\n'
+            '🇷🇺 Russia, 🇧🇾 Belarus: $18/kg\n'
+            'Use the "Calculator" for an exact quote.\n\n'
+            '3️⃣ What documents do I need?\n'
+            "Just the recipient's phone number. "
+            'For high-value items, a receipt/invoice may be required.\n\n'
+            '4️⃣ How should I pack my parcel?\n'
+            'Pack securely: box, tape, bubble wrap for fragile items. '
+            'Clothing and soft items can go in a bag. '
+            'Drop-off point staff can assist with packaging for an extra fee.\n\n'
+            '5️⃣ What items cannot be shipped?\n'
+            'Prohibited: weapons, ammunition, liquids >100ml (air), '
+            'aerosols, hazardous chemicals, perishables.\n\n'
+            '6️⃣ How does the recipient track the parcel?\n'
+            'The recipient registers in this bot and enters the tracking number '
+            'in "Track parcel". Status notifications are sent automatically.\n\n'
+            '7️⃣ Support contacts:\n'
+            '🇺🇸 USA: WhatsApp +1 213 276 6898\n'
+            '🌍 CIS: WhatsApp +996 709 969621'
+        ),
+
+        # Drop-off points
+        'dropoffs_list': '📍 US Drop-off Points:',
+        'dropoff_line': '• {name} — {location}',
+        'no_dropoffs': 'No US drop-off points have been added yet.\nContact us: +1 213 276 6898',
+
         # Partner
         'partner_enter_code': 'Enter partner code:',
         'partner_invalid_code': '❌ Invalid partner code.',
@@ -343,6 +640,7 @@ TEXTS = {
         'accept_confirm': (
             '✅ Confirm parcel acceptance:\n\n'
             '📱 Client: {phone}\n'
+            '🌍 Country: {country}\n'
             '⚖️ Weight: {weight} kg\n'
             '📏 Dimensions: {l}×{w}×{h} cm\n'
             '📦 Volumetric weight: {vol} kg\n'
@@ -381,6 +679,10 @@ TEXTS = {
         'btn_network_stats': '📊 Network statistics',
         'btn_list_partners': '🏪 Partners list',
         'btn_add_partner': '➕ Add partner',
+        'btn_broadcast': '📢 Broadcast to clients',
+        'btn_set_address': '🏠 Change warehouse address',
+        'btn_add_website_user': '👤 Add website user ID',
+        'btn_view_requests': '🛍️ Shopping requests',
 
         # Admin stats
         'network_stats': (
@@ -405,8 +707,39 @@ TEXTS = {
         'partner_code_exists': '❌ This code already exists.',
         'partner_added': '✅ Partner added!\nName: {name}\nAddress: {location}\nCode: {code}',
 
+        # Admin broadcast
+        'broadcast_enter_msg': (
+            '📢 Enter broadcast message:\n\n'
+            'This message will be sent to all registered clients.'
+        ),
+        'broadcast_sent': '✅ Broadcast complete!\nSent: {sent} | Failed: {failed}',
+
+        # Admin set warehouse address
+        'set_address_enter': (
+            '🏠 Enter new US warehouse address:\n\n'
+            'Current address:\n{current}'
+        ),
+        'address_updated': '✅ Warehouse address updated!',
+
+        # Admin add website user
+        'add_wu_id_enter': '👤 Enter the user ID from owaycargo.com:',
+        'add_wu_name_enter': 'Enter user name (ID: {website_id}):',
+        'wu_added': '✅ User added!\nID: {website_id}\nName: {name}',
+        'wu_id_taken': '❌ A user with this ID already exists.',
+
+        # Admin view shopping requests
+        'view_requests_empty': '🛍️ No new shopping requests.',
+        'view_requests_header': '🛍️ New shopping requests:\n',
+        'request_line': '#{id} | {client} | {phone}\n📝 {text}\n📅 {date}\n',
+
         # Notifications
-        'notify_accepted': '📦 Your parcel has been accepted!\n\nTracking: {tracking}\nPoint: {partner}\n⚖️ Weight: {weight} kg\n💰 Price: ${price}',
+        'notify_accepted': (
+            '📦 Your parcel has been accepted!\n\n'
+            'Tracking: {tracking}\n'
+            'Point: {partner}\n'
+            '⚖️ Weight: {weight} kg\n'
+            '💰 Price: ${price}'
+        ),
 
         # Driver
         'driver_enter_code': 'Enter driver code:',

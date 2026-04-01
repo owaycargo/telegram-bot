@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>OWAY Cargo</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --primary: #0057b7;
+      --primary-dark: #003d80;
+      --accent: #ffd700;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --radius: 16px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 20px 20px 0;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .brand h1 { font-size: 20px; font-weight: 700; }
+    .brand p  { font-size: 12px; opacity: 0.8; }
+
+    /* Tab bar inside header */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      flex-shrink: 0;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab.active {
+      color: white;
+      border-bottom-color: var(--accent);
+    }
+
+    /* Pages */
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+
+    /* Form */
+    .input-group { margin-bottom: 14px; }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-group input, .input-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--primary);
+      border: 2px solid var(--border);
+    }
+
+    /* Result boxes */
+    .result-box {
+      background: linear-gradient(135deg, #f0f7ff, #e8f0fe);
+      border: 1px solid #c7d9f5;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    .result-box.show { display: block; }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(0,87,183,0.1);
+      font-size: 14px;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .label { color: var(--text-muted); }
+    .result-row .value { font-weight: 600; }
+    .result-row.total .value { font-size: 20px; color: var(--primary); font-weight: 800; }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-accepted    { background: #d1fae5; color: #065f46; }
+    .status-in_transit  { background: #dbeafe; color: #1e40af; }
+    .status-arrived     { background: #e0e7ff; color: #3730a3; }
+    .status-customs     { background: #fef3c7; color: #92400e; }
+    .status-ready       { background: #d1fae5; color: #065f46; }
+    .status-delivered   { background: #d1fae5; color: #065f46; }
+    .status-transit_zone     { background: #fce7f3; color: #9d174d; }
+    .status-arrived_moscow   { background: #e0e7ff; color: #3730a3; }
+    .status-with_driver      { background: #fff7ed; color: #92400e; }
+
+    /* Timeline */
+    .timeline { margin-top: 16px; }
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 36px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .timeline-dot.done { background: var(--success); }
+    .timeline-info { flex: 1; }
+    .timeline-status { font-size: 14px; font-weight: 600; }
+    .timeline-date   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Parcel info */
+    .parcel-card { }
+    .parcel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .parcel-tracking { font-size: 18px; font-weight: 800; color: var(--primary); }
+    .parcel-meta { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .info-item {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .info-item .ilabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+    .info-item .ivalue { font-size: 14px; font-weight: 700; margin-top: 2px; }
+
+    /* FAQ */
+    .faq-section { }
+    .faq-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .faq-tab {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .faq-tab.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+
+    .faq-item {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .faq-question {
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-question::after {
+      content: '▼';
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .faq-item.open .faq-question::after { transform: rotate(180deg); }
+    .faq-answer {
+      display: none;
+      padding: 0 16px 14px;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .faq-item.open .faq-answer { display: block; }
+
+    /* Support */
+    .support-card {
+      text-align: center;
+    }
+    .support-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 12px;
+    }
+    .support-name { font-size: 16px; font-weight: 700; }
+    .support-region { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+    .support-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #f0f7ff;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+
+    /* Rates table */
+    .rates-table { width: 100%; border-collapse: collapse; }
+    .rates-table th {
+      background: var(--primary);
+      color: white;
+      padding: 10px 14px;
+      font-size: 13px;
+      text-align: left;
+    }
+    .rates-table th:first-child { border-radius: 8px 0 0 0; }
+    .rates-table th:last-child  { border-radius: 0 8px 0 0; }
+    .rates-table td {
+      padding: 10px 14px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .rates-table tr:last-child td { border-bottom: none; }
+    .rates-table tr:nth-child(even) td { background: #f9fafb; }
+    .rate-price { font-weight: 700; color: var(--primary); }
+
+    /* Loading spinner */
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error / success message */
+    .msg {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 12px;
+      display: none;
+    }
+    .msg.show { display: block; }
+    .msg.error   { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+    .msg.success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-item {
+      flex: 1;
+      padding: 10px 0 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-item .icon { font-size: 22px; }
+    .nav-item.active { color: var(--primary); }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --border: #334155;
+      }
+      .input-group input, .input-group select { background: #1e293b; color: #f1f5f9; }
+      .faq-item { background: #1e293b; }
+      .result-box { background: #1a2744; border-color: #334155; }
+      .info-item { background: #0f172a; }
+      .bottom-nav { background: #1e293b; border-top-color: #334155; }
+      .rates-table tr:nth-child(even) td { background: #1a2744; }
+      .support-link { background: #1a2744; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">🚚</div>
+      <div class="brand">
+        <h1>OWAY Cargo</h1>
+        <p>США → СНГ • USA → CIS</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages -->
+
+  <!-- TRACK PAGE -->
+  <div id="page-track" class="page active">
+    <div class="card">
+      <div class="card-title">🔍 Отследить посылку</div>
+      <div class="input-group">
+        <label>Трек-номер / Tracking Number</label>
+        <input type="text" id="track-input" placeholder="OWY-XXXXXXXXXX"
+               style="text-transform:uppercase" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" onclick="trackParcel()">
+        <span id="track-btn-text">Найти посылку</span>
+      </button>
+      <div id="track-error" class="msg error"></div>
+    </div>
+
+    <div id="parcel-result" class="card parcel-card" style="display:none">
+      <div class="parcel-header">
+        <div>
+          <div class="parcel-tracking" id="res-tracking"></div>
+          <div class="parcel-meta" id="res-partner"></div>
+        </div>
+        <div id="res-status-badge"></div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="ilabel">🌍 Страна</div>
+          <div class="ivalue" id="res-country"></div>
+        </div>
+        <div class="info-item">
+          <div class="ilabel">⚖️ Вес</div>
+          <div class="ivalue" id="res-weight"></div>
+        </div>
+        <div class="info-item">
+          <div class="ilabel">💰 Стоимость</div>
+          <div class="ivalue" id="res-price"></div>
+        </div>
+        <div class="info-item">
+          <div class="ilabel">📅 Принята</div>
+          <div class="ivalue" id="res-date"></div>
+        </div>
+      </div>
+
+      <div class="timeline" id="res-timeline"></div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR PAGE -->
+  <div id="page-calc" class="page">
+    <div class="card">
+      <div class="card-title">💰 Калькулятор стоимости</div>
+
+      <div class="input-group">
+        <label>Страна назначения</label>
+        <select id="calc-country">
+          <option value="KG">🇰🇬 Кыргызстан — $12/кг</option>
+          <option value="KZ">🇰🇿 Казахстан — $12/кг</option>
+          <option value="UZ">🇺🇿 Узбекистан — $12/кг</option>
+          <option value="RU">🇷🇺 Россия — $18/кг</option>
+          <option value="BY">🇧🇾 Беларусь — $18/кг</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Вес (кг) / Weight (kg)</label>
+        <input type="number" id="calc-weight" placeholder="0.5" min="0.1" step="0.1" />
+      </div>
+
+      <div class="input-group">
+        <label>Длина (см) / Length (cm)</label>
+        <input type="number" id="calc-length" placeholder="30" min="1" />
+      </div>
+
+      <div class="input-group">
+        <label>Ширина (см) / Width (cm)</label>
+        <input type="number" id="calc-width" placeholder="20" min="1" />
+      </div>
+
+      <div class="input-group">
+        <label>Высота (см) / Height (cm)</label>
+        <input type="number" id="calc-height" placeholder="15" min="1" />
+      </div>
+
+      <button class="btn btn-primary" onclick="calculate()">
+        Рассчитать стоимость
+      </button>
+
+      <div id="calc-error" class="msg error"></div>
+
+      <div id="calc-result" class="result-box">
+        <div class="result-row">
+          <span class="label">📦 Фактический вес</span>
+          <span class="value" id="r-actual"></span>
+        </div>
+        <div class="result-row">
+          <span class="label">📏 Объёмный вес</span>
+          <span class="value" id="r-vol"></span>
+        </div>
+        <div class="result-row">
+          <span class="label">⚖️ Расчётный вес</span>
+          <span class="value" id="r-chargeable"></span>
+        </div>
+        <div class="result-row">
+          <span class="label">💲 Тариф</span>
+          <span class="value" id="r-rate"></span>
+        </div>
+        <div class="result-row total">
+          <span class="label">💵 ИТОГО</span>
+          <span class="value" id="r-total"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rates reference -->
+    <div class="card">
+      <div class="card-title">📋 Тарифы доставки</div>
+      <table class="rates-table">
+        <tr>
+          <th>Страна</th>
+          <th>Тариф</th>
+          <th>Срок</th>
+        </tr>
+        <tr>
+          <td>🇰🇬 Кыргызстан</td>
+          <td class="rate-price">$12/кг</td>
+          <td>14–21 дн.</td>
+        </tr>
+        <tr>
+          <td>🇰🇿 Казахстан</td>
+          <td class="rate-price">$12/кг</td>
+          <td>14–21 дн.</td>
+        </tr>
+        <tr>
+          <td>🇺🇿 Узбекистан</td>
+          <td class="rate-price">$12/кг</td>
+          <td>14–21 дн.</td>
+        </tr>
+        <tr>
+          <td>🇷🇺 Россия</td>
+          <td class="rate-price">$18/кг</td>
+          <td>21–30 дн.</td>
+        </tr>
+        <tr>
+          <td>🇧🇾 Беларусь</td>
+          <td class="rate-price">$18/кг</td>
+          <td>21–30 дн.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FAQ PAGE -->
+  <div id="page-faq" class="page">
+    <div class="faq-section">
+      <div class="faq-tabs">
+        <button class="faq-tab active" onclick="switchFaq('order', this)">🛒 Заказать из США</button>
+        <button class="faq-tab" onclick="switchFaq('send', this)">📦 Отправить из США</button>
+      </div>
+
+      <!-- Order FAQ -->
+      <div id="faq-order">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как получить адрес в США?</div>
+          <div class="faq-answer">
+            Зарегистрируйтесь на <strong>owaycargo.com</strong> и получите личный ID.
+            Затем введите этот ID в боте через кнопку «Мой адрес в США».
+            После проверки вам будет показан адрес нашего склада в США.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как отследить посылку?</div>
+          <div class="faq-answer">
+            Используйте вкладку «Посылки» в этом приложении или кнопку «Отследить посылку» в боте.
+            Введите трек-номер, который вы получили при приёме посылки. При каждом изменении статуса вам придёт уведомление в Telegram.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Сколько стоит доставка?</div>
+          <div class="faq-answer">
+            <strong>Кыргызстан, Казахстан, Узбекистан:</strong> $12/кг<br/>
+            <strong>Россия, Беларусь:</strong> $18/кг<br/><br/>
+            Расчёт ведётся по объёмному или фактическому весу — берётся максимум из двух.
+            Объёмный вес = Длина × Ширина × Высота / 5000.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как долго идёт доставка?</div>
+          <div class="faq-answer">
+            <strong>КР/КЗ/УЗ:</strong> 14–21 рабочий день<br/>
+            <strong>Россия/Беларусь:</strong> 21–30 рабочих дней<br/><br/>
+            Срок считается с момента приёма посылки на нашем складе в США.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Что такое Шопинг-помощник?</div>
+          <div class="faq-answer">
+            Наш менеджер купит любой товар из США за вас!
+            Напишите запрос через кнопку «Шопинг-помощник» в боте, и мы свяжемся с вами.
+            <strong>Комиссия: 10% от стоимости товара.</strong>
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Какие товары запрещены?</div>
+          <div class="faq-answer">
+            Нельзя: оружие, наркотики, опасные вещества, скоропортящиеся продукты, живые животные, товары с ограничениями на ввоз в страну назначения.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как с вами связаться?</div>
+          <div class="faq-answer">
+            🌍 Клиенты СНГ: WhatsApp <strong>+996 709 969621</strong><br/>
+            🇺🇸 Клиенты США: WhatsApp <strong>+1 213 276 6898</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Send FAQ -->
+      <div id="faq-send" style="display:none">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Где сдать посылку?</div>
+          <div class="faq-answer">
+            Найдите ближайший пункт приёма через кнопку «Пункты приёма» в боте.
+            Сотрудник примет посылку, взвесит её и выдаст трек-номер.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Сколько стоит отправка?</div>
+          <div class="faq-answer">
+            <strong>Кыргызстан, Казахстан, Узбекистан:</strong> $12/кг<br/>
+            <strong>Россия, Беларусь:</strong> $18/кг<br/><br/>
+            Используйте калькулятор для расчёта точной стоимости.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Какие документы нужны?</div>
+          <div class="faq-answer">
+            Нужен только номер телефона получателя. Для дорогостоящих товаров (свыше $200) может потребоваться чек или инвойс.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как упаковать посылку?</div>
+          <div class="faq-answer">
+            Упакуйте надёжно: коробка, скотч, пузырчатая плёнка для хрупких вещей.
+            Одежду и мягкие вещи можно в полиэтиленовый пакет.
+            Сотрудники пункта помогут с упаковкой за дополнительную плату.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Какие товары запрещены?</div>
+          <div class="faq-answer">
+            Нельзя: оружие, боеприпасы, жидкости более 100 мл (авиарейсы), аэрозоли, опасные химикаты, скоропортящиеся продукты.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Как получатель отслеживает посылку?</div>
+          <div class="faq-answer">
+            Получатель регистрируется в Telegram боте @Oway1_bot и вводит трек-номер
+            в разделе «Отследить посылку». При каждом изменении статуса автоматически приходит уведомление.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">Контакты поддержки</div>
+          <div class="faq-answer">
+            🇺🇸 США: WhatsApp <strong>+1 213 276 6898</strong><br/>
+            🌍 СНГ: WhatsApp <strong>+996 709 969621</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPPORT PAGE -->
+  <div id="page-support" class="page">
+    <div class="card support-card">
+      <div class="support-avatar">👩‍💼</div>
+      <div class="support-name">Менеджер СНГ</div>
+      <div class="support-region">🌍 Кыргызстан, Казахстан, Узбекистан, Россия, Беларусь</div>
+      <a href="https://wa.me/996709969621" class="support-link">
+        <span>📱</span> WhatsApp +996 709 969621
+      </a>
+      <a href="tg://resolve?phone=996709969621" class="support-link">
+        <span>✈️</span> Telegram +996 709 969621
+      </a>
+    </div>
+
+    <div class="card support-card">
+      <div class="support-avatar">👨‍💼</div>
+      <div class="support-name">Менеджер США</div>
+      <div class="support-region">🇺🇸 United States</div>
+      <a href="https://wa.me/12132766898" class="support-link">
+        <span>📱</span> WhatsApp +1 213 276 6898
+      </a>
+      <a href="tg://resolve?phone=12132766898" class="support-link">
+        <span>✈️</span> Telegram +1 213 276 6898
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏠 Склад в США</div>
+      <p style="font-size:15px; line-height:1.7; color:var(--text)">
+        OWAY Cargo Warehouse<br/>
+        4305 Hazel Ave<br/>
+        Fair Oaks, CA 95628<br/>
+        United States<br/>
+        <strong>Tel: +1 213 276 6898</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-track" onclick="showPage('track')">
+      <span class="icon">🔍</span>
+      <span>Посылки</span>
+    </button>
+    <button class="nav-item" id="nav-calc" onclick="showPage('calc')">
+      <span class="icon">💰</span>
+      <span>Цены</span>
+    </button>
+    <button class="nav-item" id="nav-faq" onclick="showPage('faq')">
+      <span class="icon">❓</span>
+      <span>FAQ</span>
+    </button>
+    <button class="nav-item" id="nav-support" onclick="showPage('support')">
+      <span class="icon">💬</span>
+      <span>Поддержка</span>
+    </button>
+  </nav>
+
+  <script>
+    // ── Telegram Web App init ──
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      // Apply Telegram theme colors
+      if (tg.colorScheme === 'dark') {
+        document.documentElement.style.setProperty('--bg', '#0f172a');
+        document.documentElement.style.setProperty('--card', '#1e293b');
+        document.documentElement.style.setProperty('--text', '#f1f5f9');
+        document.documentElement.style.setProperty('--text-muted', '#94a3b8');
+        document.documentElement.style.setProperty('--border', '#334155');
+      }
+    }
+
+    // ── Page navigation ──
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      document.getElementById('nav-' + name).classList.add('active');
+    }
+
+    // ── Status helpers ──
+    const STATUS_LABELS = {
+      'accepted':       '✅ Принята в США',
+      'in_transit':     '✈️ В пути',
+      'arrived':        '📍 Прибыла',
+      'customs':        '🛃 Таможня',
+      'ready':          '📦 Готова к выдаче',
+      'delivered':      '🏠 Доставлена',
+      'transit_zone':   '🔄 Транзитная зона',
+      'arrived_moscow': '📍 Прибыла в Москву',
+      'with_driver':    '🚚 Передана курьеру',
+    };
+
+    const STATUS_ICONS = {
+      'accepted': '✅', 'in_transit': '✈️', 'arrived': '📍',
+      'customs': '🛃', 'ready': '📦', 'delivered': '🏠',
+      'transit_zone': '🔄', 'arrived_moscow': '📍', 'with_driver': '🚚',
+    };
+
+    const COUNTRY_NAMES = {
+      KG: '🇰🇬 Кыргызстан', KZ: '🇰🇿 Казахстан',
+      UZ: '🇺🇿 Узбекистан', RU: '🇷🇺 Россия', BY: '🇧🇾 Беларусь',
+    };
+
+    // ── Parcel tracking ──
+    async function trackParcel() {
+      const input = document.getElementById('track-input');
+      const errorBox = document.getElementById('track-error');
+      const result = document.getElementById('parcel-result');
+      const btnText = document.getElementById('track-btn-text');
+      const tracking = input.value.trim().toUpperCase();
+
+      if (!tracking) {
+        showMsg(errorBox, 'Введите трек-номер');
+        return;
+      }
+
+      errorBox.classList.remove('show');
+      result.style.display = 'none';
+      btnText.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        // Try to get base URL for API
+        const base = window.location.origin;
+        const res = await fetch(`${base}/track/${encodeURIComponent(tracking)}`);
+
+        if (res.status === 404) {
+          showMsg(errorBox, `❌ Посылка ${tracking} не найдена`);
+          btnText.textContent = 'Найти посылку';
+          return;
+        }
+
+        if (!res.ok) throw new Error('server_error');
+
+        const data = await res.json();
+        renderParcel(data);
+        result.style.display = 'block';
+
+      } catch (e) {
+        // Fallback demo mode when API not reachable
+        if (tracking.startsWith('OWY-')) {
+          showMsg(errorBox, '⚠️ Сервер недоступен. Откройте бот для отслеживания.');
+        } else {
+          showMsg(errorBox, '❌ Посылка не найдена. Проверьте трек-номер.');
+        }
+      }
+
+      btnText.textContent = 'Найти посылку';
+    }
+
+    function renderParcel(data) {
+      document.getElementById('res-tracking').textContent = data.tracking;
+      document.getElementById('res-partner').textContent = '🏪 ' + data.partner;
+      document.getElementById('res-country').textContent = COUNTRY_NAMES[data.country] || data.country;
+      document.getElementById('res-weight').textContent = data.weight + ' кг';
+      document.getElementById('res-price').textContent = '$' + data.price;
+      document.getElementById('res-date').textContent = (data.created_at || '').slice(0, 10);
+
+      const badge = document.getElementById('res-status-badge');
+      const statusLabel = STATUS_LABELS[data.status] || data.status;
+      badge.innerHTML = `<span class="status-badge status-${data.status}">${statusLabel}</span>`;
+
+      // Timeline
+      const tl = document.getElementById('res-timeline');
+      if (data.events && data.events.length) {
+        let html = '';
+        data.events.forEach((ev, i) => {
+          const icon = STATUS_ICONS[ev.status] || '•';
+          const label = STATUS_LABELS[ev.status] || ev.status;
+          const date = (ev.created_at || '').slice(0, 16).replace('T', ' ');
+          const done = i < data.events.length - 1 ? 'done' : '';
+          html += `
+            <div class="timeline-item">
+              <div class="timeline-dot ${done}">${icon}</div>
+              <div class="timeline-info">
+                <div class="timeline-status">${label}</div>
+                <div class="timeline-date">${date}</div>
+              </div>
+            </div>`;
+        });
+        tl.innerHTML = html;
+      } else {
+        tl.innerHTML = '';
+      }
+    }
+
+    // Enter key on track input
+    document.getElementById('track-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') trackParcel();
+    });
+
+    // ── Calculator ──
+    async function calculate() {
+      const country  = document.getElementById('calc-country').value;
+      const weight   = parseFloat(document.getElementById('calc-weight').value);
+      const length   = parseFloat(document.getElementById('calc-length').value);
+      const width    = parseFloat(document.getElementById('calc-width').value);
+      const height   = parseFloat(document.getElementById('calc-height').value);
+      const errorBox = document.getElementById('calc-error');
+      const result   = document.getElementById('calc-result');
+
+      errorBox.classList.remove('show');
+
+      if (!weight || weight <= 0) { showMsg(errorBox, 'Введите вес'); return; }
+      if (!length || !width || !height) {
+        showMsg(errorBox, 'Введите все размеры (или оставьте 0)');
+        // Calculate without dimensions
+      }
+
+      try {
+        const base = window.location.origin;
+        const url = `${base}/calculate?weight=${weight}&length=${length||0}&width=${width||0}&height=${height||0}&country=${country}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('r-actual').textContent     = data.actual + ' кг';
+          document.getElementById('r-vol').textContent        = data.volumetric + ' кг';
+          document.getElementById('r-chargeable').textContent = data.chargeable + ' кг';
+          document.getElementById('r-rate').textContent       = '$' + data.rate + '/кг';
+          document.getElementById('r-total').textContent      = '$' + data.price;
+          result.classList.add('show');
+          return;
+        }
+      } catch (e) {
+        // fallback calculation
+      }
+
+      // Client-side fallback calculation
+      const vol = length && width && height
+        ? Math.round((length * width * height / 5000) * 100) / 100
+        : 0;
+      const chargeable = Math.max(weight, vol);
+      const rates = { KG: 12, KZ: 12, UZ: 12, RU: 18, BY: 18 };
+      const rate = rates[country] || 12;
+      const price = Math.round(chargeable * rate * 100) / 100;
+
+      document.getElementById('r-actual').textContent     = weight + ' кг';
+      document.getElementById('r-vol').textContent        = vol + ' кг';
+      document.getElementById('r-chargeable').textContent = chargeable + ' кг';
+      document.getElementById('r-rate').textContent       = '$' + rate + '/кг';
+      document.getElementById('r-total').textContent      = '$' + price;
+      result.classList.add('show');
+    }
+
+    // ── FAQ ──
+    function switchFaq(type, btn) {
+      document.querySelectorAll('.faq-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('faq-order').style.display = type === 'order' ? 'block' : 'none';
+      document.getElementById('faq-send').style.display  = type === 'send'  ? 'block' : 'none';
+    }
+
+    function toggleFaq(el) {
+      el.parentElement.classList.toggle('open');
+    }
+
+    // ── Utility ──
+    function showMsg(el, text) {
+      el.textContent = text;
+      el.classList.add('show');
+    }
+
+    // ── Pre-fill tracking from Telegram start params ──
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+      const param = tg.initDataUnsafe.start_param;
+      if (param.startsWith('track_')) {
+        const trackNum = param.replace('track_', '');
+        document.getElementById('track-input').value = trackNum;
+        trackParcel();
+      }
+    }
+  </script>
+</body>
+</html>
