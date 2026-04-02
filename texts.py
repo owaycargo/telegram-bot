@@ -48,6 +48,8 @@ TEXTS = {
         'btn_calculator': '💰 Калькулятор цены',
         'btn_support': '💬 Поддержка',
         'btn_change_lang': '🌐 Сменить язык',
+        'btn_recalculate': '🔄 Рассчитать ещё раз',
+        'btn_contact_manager': '📞 Связаться с менеджером',
 
         # Legacy client_menu (kept for fallback)
         'client_menu': '📦 Меню клиента\nВаш телефон: {phone}',
@@ -159,7 +161,18 @@ TEXTS = {
             'Выберите новый статус:'
         ),
         'admin_status_updated': '✅ Статус посылки {tracking} обновлён:\n{status}',
-        'notify_status_changed': '📬 Статус вашей посылки {tracking} обновлён:\n{status}',
+        'notify_status_changed': (
+            '📬 Обновление по вашей посылке!\n\n'
+            '🔢 Трек-номер: {tracking}\n'
+            '📦 Новый статус: {status}\n\n'
+            'Отслеживайте посылку в боте: /start'
+        ),
+        'notify_shopping_new': (
+            '🛍 Новая заявка на покупку!\n\n'
+            '👤 Клиент: {name}\n'
+            '📞 Телефон: {phone}\n'
+            '📝 Запрос:\n{request}'
+        ),
 
         # US Address verification
         'address_enter_id': (
@@ -455,6 +468,8 @@ TEXTS = {
         'btn_calculator': '💰 Price calculator',
         'btn_support': '💬 Support',
         'btn_change_lang': '🌐 Change language',
+        'btn_recalculate': '🔄 Calculate again',
+        'btn_contact_manager': '📞 Contact manager',
 
         # Legacy
         'client_menu': '📦 Client Menu\nYour phone: {phone}',
@@ -566,7 +581,18 @@ TEXTS = {
             'Choose new status:'
         ),
         'admin_status_updated': '✅ Parcel {tracking} status updated:\n{status}',
-        'notify_status_changed': '📬 Your parcel {tracking} status updated:\n{status}',
+        'notify_status_changed': (
+            '📬 Update on your parcel!\n\n'
+            '🔢 Tracking: {tracking}\n'
+            '📦 New status: {status}\n\n'
+            'Track your parcel in the bot: /start'
+        ),
+        'notify_shopping_new': (
+            '🛍 New shopping request!\n\n'
+            '👤 Client: {name}\n'
+            '📞 Phone: {phone}\n'
+            '📝 Request:\n{request}'
+        ),
 
         # US Address verification
         'address_enter_id': (

@@ -205,6 +205,27 @@ def set_config(key: str, value: str):
     conn.close()
 
 
+def add_admin_telegram_id(telegram_id: int):
+    """Register an admin's Telegram ID so they receive notifications."""
+    current = get_config('admin_telegram_ids', '')
+    ids = [i for i in current.split(',') if i.strip()]
+    str_id = str(telegram_id)
+    if str_id not in ids:
+        ids.append(str_id)
+        set_config('admin_telegram_ids', ','.join(ids))
+
+
+def get_admin_telegram_ids() -> list:
+    """Return list of admin Telegram IDs stored in config."""
+    raw = get_config('admin_telegram_ids', '')
+    result = []
+    for i in raw.split(','):
+        i = i.strip()
+        if i.isdigit():
+            result.append(int(i))
+    return result
+
+
 # ──────────────────── CLIENTS ────────────────────
 
 def get_client(telegram_id: int) -> Optional[sqlite3.Row]:

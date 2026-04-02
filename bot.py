@@ -155,6 +155,14 @@ def back_keyboard(lang):
     return ReplyKeyboardMarkup([[t(lang, 'back')]], resize_keyboard=True)
 
 
+def calc_result_keyboard(lang):
+    return ReplyKeyboardMarkup([
+        [t(lang, 'btn_recalculate')],
+        [t(lang, 'btn_contact_manager')],
+        [t(lang, 'back')],
+    ], resize_keyboard=True)
+
+
 def yes_no_keyboard(lang, yes_text=None, no_text=None):
     yes = yes_text or t(lang, 'btn_confirm')
     no = no_text or t(lang, 'cancel')
@@ -764,9 +772,29 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     calc_return = context.user_data.get('calc_return', 'SEND')
 
+    # Back → return to dims step
     if text in (t('ru', 'back'), t('en', 'back')):
         await update.message.reply_text(t(lang, 'calc_enter_dims'), reply_markup=back_keyboard(lang))
         return CLIENT_CALC_L
+
+    # "Recalculate" → restart from weight
+    if text in (t('ru', 'btn_recalculate'), t('en', 'btn_recalculate')):
+        await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
+        return CLIENT_CALC_W
+
+    # "Contact manager" → show support contacts and return to menu
+    if text in (t('ru', 'btn_contact_manager'), t('en', 'btn_contact_manager')):
+        client = db.get_client(update.effective_user.id)
+        phone = client['phone'] if client else '—'
+        await update.message.reply_text(t(lang, 'support_text'))
+        if calc_return == 'ORDER':
+            await update.message.reply_text(t(lang, 'order_menu', phone=phone), reply_markup=order_menu_keyboard(lang))
+            return ORDER_MENU
+        elif calc_return == 'SEND':
+            await update.message.reply_text(t(lang, 'send_menu', phone=phone), reply_markup=send_menu_keyboard(lang))
+            return SEND_MENU
+        await update.message.reply_text(t(lang, 'client_menu', phone=phone), reply_markup=client_menu_keyboard(lang))
+        return CLIENT_MENU
 
     country_map = {}
     for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
@@ -786,23 +814,14 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rate = db.RATES.get(chosen, 12.0)
     country_name = t(lang, f'country_{chosen}')
 
-    if calc_return == 'ORDER':
-        reply_markup = order_menu_keyboard(lang)
-        return_state = ORDER_MENU
-    elif calc_return == 'SEND':
-        reply_markup = send_menu_keyboard(lang)
-        return_state = SEND_MENU
-    else:
-        reply_markup = client_menu_keyboard(lang)
-        return_state = CLIENT_MENU
-
     await update.message.reply_text(
         t(lang, 'calc_result',
           country=country_name, rate=rate,
           actual=w_actual, vol=vol, chargeable=chargeable, price=price),
-        reply_markup=reply_markup
+        reply_markup=calc_result_keyboard(lang)
     )
-    return return_state
+    # Stay in CALC_COUNTRY so user can tap Recalculate or Contact manager
+    return CLIENT_CALC_COUNTRY
 
 
 # ──────────────────── US ADDRESS VERIFICATION ────────────────────
@@ -862,7 +881,7 @@ async def shopping_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not client:
         return await start(update, context)
 
-    req = db.create_shopping_request(
+    db.create_shopping_request(
         client_telegram_id=update.effective_user.id,
         client_name=client['name'],
         client_phone=client['phone'],
@@ -874,8 +893,18 @@ async def shopping_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=order_menu_keyboard(lang)
     )
 
-    # Notify all admins via broadcast to admin Telegram if configured
-    # (In production, you'd store admin telegram_ids in config)
+    # Notify all admins
+    admin_ids = db.get_admin_telegram_ids()
+    notify_text = t('ru', 'notify_shopping_new',
+                    name=client['name'],
+                    phone=client['phone'],
+                    request=text)
+    for admin_id in admin_ids:
+        try:
+            await context.bot.send_message(chat_id=admin_id, text=notify_text)
+        except Exception as e:
+            logger.warning(f"Could not notify admin {admin_id}: {e}")
+
     return ORDER_MENU
 
 
@@ -1277,6 +1306,7 @@ async def admin_code_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(t(lang, 'admin_invalid_code'))
         return ADMIN_CODE_STATE
     context.user_data['is_admin'] = True
+    db.add_admin_telegram_id(update.effective_user.id)
     await update.message.reply_text(
         t(lang, 'admin_welcome'),
         reply_markup=admin_menu_keyboard(lang)
