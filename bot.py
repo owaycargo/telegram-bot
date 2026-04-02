@@ -257,8 +257,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
 
     # Auto-detect language from Telegram profile; fallback to language selector
+    # CIS language codes → Russian (ky=Kyrgyz, kk=Kazakh, uz=Uzbek, be=Belarusian, uk=Ukrainian)
+    CIS_LANG_CODES = ('ru', 'ky', 'kk', 'uz', 'be', 'uk', 'tg')
     tg_lang = (update.effective_user.language_code or '').lower()
-    if tg_lang.startswith('ru'):
+    if any(tg_lang.startswith(code) for code in CIS_LANG_CODES):
         context.user_data['lang'] = 'ru'
     elif tg_lang:
         context.user_data['lang'] = 'en'
