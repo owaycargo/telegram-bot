@@ -46,9 +46,10 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '7486227402:AAH0zRC_kgrdzgu1dr8yryHoId6G
     ADMIN_UPDATE_TRACKING, ADMIN_UPDATE_STATUS,
     ADMIN_BROADCAST, ADMIN_SET_ADDRESS,
     ADMIN_ADD_WU_ID, ADMIN_ADD_WU_NAME,
+    ADMIN_UPDATE_REQUEST,
     # Driver
     DRIVER_CODE_STATE, DRIVER_MENU, DRIVER_DELIVER,
-) = range(41)
+) = range(42)
 
 # ──────────────────── Keyboards ────────────────────
 
@@ -74,8 +75,9 @@ def order_menu_keyboard(lang):
     return ReplyKeyboardMarkup([
         [t(lang, 'btn_track'), t(lang, 'btn_history')],
         [t(lang, 'btn_my_address'), t(lang, 'btn_shopping')],
-        [t(lang, 'btn_calculator'), t(lang, 'btn_faq')],
-        [t(lang, 'btn_support'), t(lang, 'btn_miniapp')],
+        [t(lang, 'btn_my_requests'), t(lang, 'btn_calculator')],
+        [t(lang, 'btn_faq'), t(lang, 'btn_support')],
+        [t(lang, 'btn_miniapp')],
         [t(lang, 'btn_change_lang'), t(lang, 'main_menu')],
     ], resize_keyboard=True)
 
@@ -122,8 +124,16 @@ def admin_menu_keyboard(lang):
         [t(lang, 'btn_update_status')],
         [t(lang, 'btn_broadcast')],
         [t(lang, 'btn_set_address'), t(lang, 'btn_add_website_user')],
-        [t(lang, 'btn_view_requests')],
+        [t(lang, 'btn_view_requests'), t(lang, 'btn_update_request')],
         [t(lang, 'main_menu')],
+    ], resize_keyboard=True)
+
+
+def request_status_keyboard(lang):
+    return ReplyKeyboardMarkup([
+        [t(lang, 'request_status_in_progress'), t(lang, 'request_status_done')],
+        [t(lang, 'request_status_cancelled')],
+        [t(lang, 'back')],
     ], resize_keyboard=True)
 
 
@@ -245,11 +255,46 @@ def menu_text_for_client(client, lang):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
+
+    # Auto-detect language from Telegram profile; fallback to language selector
+    tg_lang = (update.effective_user.language_code or '').lower()
+    if tg_lang.startswith('ru'):
+        context.user_data['lang'] = 'ru'
+    elif tg_lang:
+        context.user_data['lang'] = 'en'
+    else:
+        # Can't detect — show language picker
+        await update.message.reply_text(
+            t('ru', 'choose_language'),
+            reply_markup=lang_keyboard()
+        )
+        return LANG_SELECT
+
+    lang = context.user_data['lang']
+
+    # If returning client — go straight to their menu
+    client = db.get_client(update.effective_user.id)
+    if client:
+        context.user_data['lang'] = client['lang']
+        lang = client['lang']
+        if client['client_type']:
+            await update.message.reply_text(
+                t(lang, 'client_already_registered', name=client['name']),
+                reply_markup=menu_keyboard_for_client(client, lang)
+            )
+            return menu_state_for_client(client)
+        await update.message.reply_text(
+            t(lang, 'client_already_registered', name=client['name']) + '\n\n' +
+            t(lang, 'client_type_select'),
+            reply_markup=client_type_keyboard(lang)
+        )
+        return CLIENT_TYPE_SELECT
+
     await update.message.reply_text(
-        t('ru', 'choose_language'),
-        reply_markup=lang_keyboard()
+        t(lang, 'choose_role'),
+        reply_markup=role_keyboard(lang)
     )
-    return LANG_SELECT
+    return ROLE_SELECT
 
 
 async def lang_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -426,6 +471,31 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         await update.message.reply_text(t(lang, 'shopping_enter_request'))
         return SHOPPING_REQUEST
+
+    elif text in (t('ru', 'btn_my_requests'), t('en', 'btn_my_requests')):
+        requests = db.get_client_shopping_requests(update.effective_user.id)
+        if not requests:
+            await update.message.reply_text(
+                t(lang, 'my_requests_empty'),
+                reply_markup=order_menu_keyboard(lang)
+            )
+            return ORDER_MENU
+        status_map = {
+            'new': t(lang, 'request_status_new'),
+            'in_progress': t(lang, 'request_status_in_progress'),
+            'done': t(lang, 'request_status_done'),
+            'cancelled': t(lang, 'request_status_cancelled'),
+        }
+        lines = t(lang, 'my_requests_header')
+        for r in requests:
+            date_str = r['created_at'][:10] if r['created_at'] else '—'
+            status_label_str = status_map.get(r['status'], r['status'])
+            short_text = r['request_text'][:80] + ('…' if len(r['request_text']) > 80 else '')
+            lines += t(lang, 'my_request_line',
+                       id=r['id'], status=status_label_str,
+                       text=short_text, date=date_str)
+        await update.message.reply_text(lines, reply_markup=order_menu_keyboard(lang))
+        return ORDER_MENU
 
     elif text in (t('ru', 'btn_calculator'), t('en', 'btn_calculator')):
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
@@ -1156,6 +1226,8 @@ async def accept_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if client_tg_id:
         client_lang = client['lang'] if client else lang
+        country = context.user_data.get('accept_country', 'KG').lower()
+        delivery_days = t(client_lang, f'delivery_days_{country}')
         try:
             await context.bot.send_message(
                 chat_id=client_tg_id,
@@ -1163,7 +1235,8 @@ async def accept_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        tracking=parcel['tracking'],
                        partner=partner['name'] if partner else '—',
                        weight=parcel['chargeable_weight'],
-                       price=parcel['price'])
+                       price=parcel['price'],
+                       delivery_days=delivery_days)
             )
             if parcel['photo_file_id']:
                 await context.bot.send_photo(
@@ -1383,6 +1456,13 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.message.reply_text('\n'.join(lines), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
+    elif text in (t('ru', 'btn_update_request'), t('en', 'btn_update_request')):
+        await update.message.reply_text(
+            t(lang, 'admin_update_request_enter_id'),
+            reply_markup=back_keyboard(lang)
+        )
+        return ADMIN_UPDATE_REQUEST
+
     elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
         return await start(update, context)
 
@@ -1497,6 +1577,107 @@ async def admin_update_status(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.warning(f"Could not notify client: {e}")
 
     return ADMIN_MENU
+
+
+# ──────────────────── ADMIN UPDATE SHOPPING REQUEST ────────────────────
+
+async def admin_update_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = get_lang(context, update.effective_user.id)
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
+        return ADMIN_MENU
+
+    # If we already have a request loaded — user is choosing a new status
+    req_id = context.user_data.get('admin_req_id')
+    if req_id:
+        status_map = {
+            t('ru', 'request_status_in_progress'): 'in_progress',
+            t('en', 'request_status_in_progress'): 'in_progress',
+            t('ru', 'request_status_done'): 'done',
+            t('en', 'request_status_done'): 'done',
+            t('ru', 'request_status_cancelled'): 'cancelled',
+            t('en', 'request_status_cancelled'): 'cancelled',
+        }
+        new_status = status_map.get(text)
+        if not new_status:
+            await update.message.reply_text(t(lang, 'invalid_input'), reply_markup=request_status_keyboard(lang))
+            return ADMIN_UPDATE_REQUEST
+
+        db.update_shopping_request_status(req_id, new_status)
+        status_label_str = text
+        await update.message.reply_text(
+            t(lang, 'admin_request_updated', id=req_id, status=status_label_str),
+            reply_markup=admin_menu_keyboard(lang)
+        )
+        context.user_data.pop('admin_req_id', None)
+        context.user_data.pop('admin_req_client_id', None)
+
+        # Notify client
+        client_tg_id = context.user_data.pop('admin_req_client_tg_id', None)
+        req_text = context.user_data.pop('admin_req_text', '')
+        if client_tg_id:
+            client = db.get_client(client_tg_id)
+            client_lang = client['lang'] if client else 'ru'
+            client_status_map = {
+                'in_progress': t(client_lang, 'request_status_in_progress'),
+                'done': t(client_lang, 'request_status_done'),
+                'cancelled': t(client_lang, 'request_status_cancelled'),
+            }
+            try:
+                await context.bot.send_message(
+                    chat_id=client_tg_id,
+                    text=t(client_lang, 'notify_request_updated',
+                           id=req_id,
+                           text=req_text[:80],
+                           status=client_status_map.get(new_status, new_status))
+                )
+            except Exception as e:
+                logger.warning(f"Could not notify client about request update: {e}")
+        return ADMIN_MENU
+
+    # No request loaded yet — user is entering the ID
+    if not text.isdigit():
+        await update.message.reply_text(
+            t(lang, 'admin_update_request_enter_id'),
+            reply_markup=back_keyboard(lang)
+        )
+        return ADMIN_UPDATE_REQUEST
+
+    # Load the request
+    conn = db.get_conn()
+    req = conn.execute('SELECT * FROM shopping_requests WHERE id=?', (int(text),)).fetchone()
+    conn.close()
+
+    if not req:
+        await update.message.reply_text(
+            t(lang, 'admin_request_not_found', id=text),
+            reply_markup=back_keyboard(lang)
+        )
+        return ADMIN_UPDATE_REQUEST
+
+    context.user_data['admin_req_id'] = req['id']
+    context.user_data['admin_req_client_tg_id'] = req['client_telegram_id']
+    context.user_data['admin_req_text'] = req['request_text']
+
+    status_map_display = {
+        'new': t(lang, 'request_status_new'),
+        'in_progress': t(lang, 'request_status_in_progress'),
+        'done': t(lang, 'request_status_done'),
+        'cancelled': t(lang, 'request_status_cancelled'),
+    }
+    await update.message.reply_text(
+        t(lang, 'admin_request_found',
+          id=req['id'],
+          client=req['client_name'],
+          phone=req['client_phone'],
+          text=req['request_text'][:120],
+          date=req['created_at'][:16],
+          status=status_map_display.get(req['status'], req['status'])),
+        reply_markup=request_status_keyboard(lang)
+    )
+    return ADMIN_UPDATE_REQUEST
 
 
 # ──────────────────── ADMIN BROADCAST ────────────────────
@@ -1838,6 +2019,9 @@ def main():
             ],
             ADMIN_ADD_WU_NAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_wu_name)
+            ],
+            ADMIN_UPDATE_REQUEST: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_request)
             ],
             DRIVER_CODE_STATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, driver_code_handler)

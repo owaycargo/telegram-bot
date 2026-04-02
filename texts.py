@@ -213,6 +213,19 @@ TEXTS = {
             'Наш менеджер свяжется с вами по номеру {phone} в ближайшее время.\n\n'
             'Спасибо за доверие OWAY Cargo! 🚚'
         ),
+        'btn_my_requests': '🛍 Мои заявки',
+        'my_requests_empty': 'У вас пока нет заявок на покупку.',
+        'my_requests_header': '🛍 Ваши заявки:\n',
+        'request_status_new': '🟡 Новая',
+        'request_status_in_progress': '🔵 В работе',
+        'request_status_done': '✅ Выполнена',
+        'request_status_cancelled': '❌ Отменена',
+        'my_request_line': '#{id} {status}\n📝 {text}\n📅 {date}\n',
+        'notify_request_updated': (
+            '🛍 Обновление по вашей заявке #{id}:\n\n'
+            '📝 {text}\n'
+            '📦 Новый статус: {status}'
+        ),
         'shopping_notify_admin': (
             '🛍️ Новый запрос шопинг-помощника!\n\n'
             '👤 Клиент: {name}\n'
@@ -346,6 +359,18 @@ TEXTS = {
         'btn_set_address': '🏠 Изменить адрес склада',
         'btn_add_website_user': '👤 Добавить ID пользователя',
         'btn_view_requests': '🛍️ Заявки шопинга',
+        'btn_update_request': '✏️ Обновить статус заявки',
+        'admin_update_request_enter_id': 'Введите номер заявки (например: 3):',
+        'admin_request_not_found': '❌ Заявка #{id} не найдена.',
+        'admin_request_found': (
+            '📋 Заявка #{id}\n'
+            '👤 {client} | {phone}\n'
+            '📝 {text}\n'
+            '📅 {date}\n'
+            '📦 Статус: {status}\n\n'
+            'Выберите новый статус:'
+        ),
+        'admin_request_updated': '✅ Заявка #{id} обновлена: {status}',
 
         # Admin stats
         'network_stats': (
@@ -397,12 +422,19 @@ TEXTS = {
 
         # Notifications
         'notify_accepted': (
-            '📦 Ваша посылка принята!\n\n'
-            'Трек-номер: {tracking}\n'
-            'Пункт: {partner}\n'
-            '⚖️ Вес: {weight} кг\n'
-            '💰 Стоимость: ${price}'
+            '📦 Ваша посылка принята в пункте OWAY!\n\n'
+            '🔢 Трек-номер: {tracking}\n'
+            '📍 Пункт приёма: {partner}\n'
+            '⚖️ Расчётный вес: {weight} кг\n'
+            '💰 Стоимость доставки: ${price}\n'
+            '🕐 Ожидаемый срок: {delivery_days}\n\n'
+            'Отслеживайте посылку: /start → Отследить посылку'
         ),
+        'delivery_days_kg': '7–9 рабочих дней',
+        'delivery_days_kz': '10–14 рабочих дней',
+        'delivery_days_uz': '10–14 рабочих дней',
+        'delivery_days_ru': '15–21 рабочий день',
+        'delivery_days_by': '15–21 рабочий день',
 
         # Driver
         'driver_enter_code': 'Введите код водителя:',
@@ -633,6 +665,19 @@ TEXTS = {
             'Our manager will contact you at {phone} shortly.\n\n'
             'Thank you for choosing OWAY Cargo! 🚚'
         ),
+        'btn_my_requests': '🛍 My requests',
+        'my_requests_empty': 'You have no shopping requests yet.',
+        'my_requests_header': '🛍 Your requests:\n',
+        'request_status_new': '🟡 New',
+        'request_status_in_progress': '🔵 In progress',
+        'request_status_done': '✅ Done',
+        'request_status_cancelled': '❌ Cancelled',
+        'my_request_line': '#{id} {status}\n📝 {text}\n📅 {date}\n',
+        'notify_request_updated': (
+            '🛍 Update on your request #{id}:\n\n'
+            '📝 {text}\n'
+            '📦 New status: {status}'
+        ),
         'shopping_notify_admin': (
             '🛍️ New Shopping Assistant request!\n\n'
             '👤 Client: {name}\n'
@@ -765,6 +810,18 @@ TEXTS = {
         'btn_set_address': '🏠 Change warehouse address',
         'btn_add_website_user': '👤 Add website user ID',
         'btn_view_requests': '🛍️ Shopping requests',
+        'btn_update_request': '✏️ Update request status',
+        'admin_update_request_enter_id': 'Enter request number (e.g.: 3):',
+        'admin_request_not_found': '❌ Request #{id} not found.',
+        'admin_request_found': (
+            '📋 Request #{id}\n'
+            '👤 {client} | {phone}\n'
+            '📝 {text}\n'
+            '📅 {date}\n'
+            '📦 Status: {status}\n\n'
+            'Choose new status:'
+        ),
+        'admin_request_updated': '✅ Request #{id} updated: {status}',
 
         # Admin stats
         'network_stats': (
@@ -816,12 +873,19 @@ TEXTS = {
 
         # Notifications
         'notify_accepted': (
-            '📦 Your parcel has been accepted!\n\n'
-            'Tracking: {tracking}\n'
-            'Point: {partner}\n'
-            '⚖️ Weight: {weight} kg\n'
-            '💰 Price: ${price}'
+            '📦 Your parcel has been accepted at OWAY!\n\n'
+            '🔢 Tracking: {tracking}\n'
+            '📍 Drop-off point: {partner}\n'
+            '⚖️ Chargeable weight: {weight} kg\n'
+            '💰 Delivery cost: ${price}\n'
+            '🕐 Estimated delivery: {delivery_days}\n\n'
+            'Track your parcel: /start → Track parcel'
         ),
+        'delivery_days_kg': '7–9 business days',
+        'delivery_days_kz': '10–14 business days',
+        'delivery_days_uz': '10–14 business days',
+        'delivery_days_ru': '15–21 business days',
+        'delivery_days_by': '15–21 business days',
 
         # Driver
         'driver_enter_code': 'Enter driver code:',

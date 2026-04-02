@@ -366,6 +366,23 @@ def close_shopping_request(request_id: int):
     conn.close()
 
 
+def get_client_shopping_requests(client_telegram_id: int) -> list:
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM shopping_requests WHERE client_telegram_id=? ORDER BY id DESC LIMIT 10",
+        (client_telegram_id,)
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def update_shopping_request_status(request_id: int, status: str):
+    conn = get_conn()
+    conn.execute("UPDATE shopping_requests SET status=? WHERE id=?", (status, request_id))
+    conn.commit()
+    conn.close()
+
+
 # ──────────────────── PARTNERS ────────────────────
 
 def get_partner_by_code(code: str) -> Optional[sqlite3.Row]:
