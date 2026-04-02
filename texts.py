@@ -71,10 +71,37 @@ TEXTS = {
         'parcel_history': '📋 Ваши посылки:',
 
         # Calculator
-        'calc_enter_weight': 'Введите фактический вес (кг):',
-        'calc_enter_length': 'Введите длину (см):',
-        'calc_enter_width': 'Введите ширину (см):',
-        'calc_enter_height': 'Введите высоту (см):',
+        'calc_enter_weight': (
+            '⚖️ Введите вес посылки:\n\n'
+            'Примеры: 15.3, 15,3, 15.3 кг, 26 lb\n'
+            '(кг или фунты — переведу автоматически)'
+        ),
+        'calc_weight_accepted': '✅ Принято: {input} = {kg} кг',
+        'calc_weight_help': (
+            'Введите вес в одном из форматов:\n'
+            '• 15.3\n• 15,3\n• 15 кг\n• 26 lb'
+        ),
+        'calc_enter_dims': (
+            '📐 Введите габариты одной строкой (Д×Ш×В):\n\n'
+            'Примеры:\n'
+            '• 40x30x20\n'
+            '• 40x30x20 cm\n'
+            '• 16x12x10 in'
+        ),
+        'calc_dims_accepted': '✅ Принято: {input} = {l}×{w}×{h} см',
+        'calc_dims_help': (
+            'Введите габариты одной строкой:\n'
+            '40x30x20 см  или  16x12x10 in\n\n'
+            'Разделители: x, ×, *, пробел'
+        ),
+        'calc_dims_error': (
+            '❓ Не смог разобрать габариты.\n\n'
+            'Пришли в формате: 40x30x20 или 16x12x10 in'
+        ),
+        'calc_weight_error': (
+            '❓ Не смог разобрать вес.\n\n'
+            'Пришли в формате: 15.3 кг или 26 lb'
+        ),
         'calc_choose_country': '🌍 Выберите страну назначения:',
         'calc_result': (
             '💰 Расчёт стоимости:\n\n'
@@ -451,10 +478,37 @@ TEXTS = {
         'parcel_history': '📋 Your parcels:',
 
         # Calculator
-        'calc_enter_weight': 'Enter actual weight (kg):',
-        'calc_enter_length': 'Enter length (cm):',
-        'calc_enter_width': 'Enter width (cm):',
-        'calc_enter_height': 'Enter height (cm):',
+        'calc_enter_weight': (
+            '⚖️ Enter package weight:\n\n'
+            'Examples: 15.3, 15,3, 15.3 kg, 26 lb\n'
+            '(kg or pounds — I\'ll convert automatically)'
+        ),
+        'calc_weight_accepted': '✅ Accepted: {input} = {kg} kg',
+        'calc_weight_help': (
+            'Enter weight in any format:\n'
+            '• 15.3\n• 15,3\n• 15 kg\n• 26 lb'
+        ),
+        'calc_enter_dims': (
+            '📐 Enter dimensions in one line (L×W×H):\n\n'
+            'Examples:\n'
+            '• 40x30x20\n'
+            '• 40x30x20 cm\n'
+            '• 16x12x10 in'
+        ),
+        'calc_dims_accepted': '✅ Accepted: {input} = {l}×{w}×{h} cm',
+        'calc_dims_help': (
+            'Enter dimensions in one line:\n'
+            '40x30x20 cm  or  16x12x10 in\n\n'
+            'Separators: x, ×, *, space'
+        ),
+        'calc_dims_error': (
+            '❓ Could not parse dimensions.\n\n'
+            'Please send: 40x30x20 or 16x12x10 in'
+        ),
+        'calc_weight_error': (
+            '❓ Could not parse weight.\n\n'
+            'Please send: 15.3 kg or 26 lb'
+        ),
         'calc_choose_country': '🌍 Choose destination country:',
         'calc_result': (
             '💰 Price calculation:\n\n'

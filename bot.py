@@ -633,11 +633,69 @@ async def client_track(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return return_state
 
 
+# ──────────────────── CALCULATOR HELPERS ────────────────────
+
+_HELP_TRIGGERS = {
+    'how', 'how?', 'example', 'what', 'format',
+    'как', 'как?', 'не понял', 'пример', 'формат', 'что',
+}
+
+def _is_help_query(text: str) -> bool:
+    return text.strip().lower() in _HELP_TRIGGERS
+
+
+def _parse_weight(text: str):
+    """Return (kg_value, display_string) or None on failure."""
+    import re
+    text = text.strip()
+    m = re.match(
+        r'^([\d]+[.,]?[\d]*)\s*'
+        r'(kg|кг|lb|lbs|pound|pounds|фунт|фунтов|фунта)?$',
+        text, re.IGNORECASE
+    )
+    if not m:
+        return None
+    value = float(m.group(1).replace(',', '.'))
+    unit = (m.group(2) or '').lower()
+    if unit in ('lb', 'lbs', 'pound', 'pounds', 'фунт', 'фунтов', 'фунта'):
+        kg = round(value * 0.453592, 3)
+        display = f'{value} lb = {kg} кг'
+    else:
+        kg = round(value, 3)
+        display = f'{value} кг'
+    return kg, display
+
+
+def _parse_dims(text: str):
+    """Return (l, w, h) in cm or None on failure."""
+    import re
+    text = text.strip()
+    # Detect unit suffix
+    unit_match = re.search(r'\b(cm|см|in|inch|inches)\b', text, re.IGNORECASE)
+    unit = unit_match.group(1).lower() if unit_match else 'cm'
+    # Remove unit text
+    text_clean = re.sub(r'\b(cm|см|in|inch|inches)\b', '', text, flags=re.IGNORECASE)
+    # Split on separators: x, х (cyrillic), *, space
+    parts = re.split(r'[xх*\s]+', text_clean.strip(), flags=re.IGNORECASE)
+    parts = [p.replace(',', '.') for p in parts if p.strip()]
+    if len(parts) != 3:
+        return None
+    try:
+        nums = [float(p) for p in parts]
+    except ValueError:
+        return None
+    if unit in ('in', 'inch', 'inches'):
+        nums = [round(n * 2.54, 2) for n in nums]
+    return tuple(nums)  # (l, w, h) in cm
+
+
 # ──────────────────── CALCULATOR ────────────────────
 
 async def calc_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
-    if update.message.text in (t('ru', 'back'), t('en', 'back')):
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
         client = db.get_client(update.effective_user.id)
         calc_return = context.user_data.get('calc_return', 'SEND')
         phone = client['phone'] if client else '—'
@@ -646,51 +704,59 @@ async def calc_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ORDER_MENU
         await update.message.reply_text(t(lang, 'send_menu', phone=phone), reply_markup=send_menu_keyboard(lang))
         return SEND_MENU
-    try:
-        w = float(update.message.text.replace(',', '.'))
-        context.user_data['calc_weight'] = w
-        await update.message.reply_text(t(lang, 'calc_enter_length'))
-        return CLIENT_CALC_L
-    except ValueError:
-        await update.message.reply_text(t(lang, 'invalid_number'))
+
+    if _is_help_query(text):
+        await update.message.reply_text(t(lang, 'calc_weight_help'))
         return CLIENT_CALC_W
 
+    result = _parse_weight(text)
+    if result is None:
+        await update.message.reply_text(t(lang, 'calc_weight_error'))
+        return CLIENT_CALC_W
 
-async def calc_length(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    kg, display = result
+    context.user_data['calc_weight'] = kg
+    await update.message.reply_text(
+        t(lang, 'calc_weight_accepted', input=display, kg=kg),
+        reply_markup=back_keyboard(lang)
+    )
+    await update.message.reply_text(t(lang, 'calc_enter_dims'), reply_markup=back_keyboard(lang))
+    return CLIENT_CALC_L
+
+
+async def calc_dims(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Single handler for dimension input (replaces separate L/W/H steps)."""
     lang = get_lang(context, update.effective_user.id)
-    try:
-        context.user_data['calc_l'] = float(update.message.text.replace(',', '.'))
-        await update.message.reply_text(t(lang, 'calc_enter_width'))
-        return CLIENT_CALC_W2
-    except ValueError:
-        await update.message.reply_text(t(lang, 'invalid_number'))
+    text = update.message.text.strip()
+
+    if text in (t('ru', 'back'), t('en', 'back')):
+        await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
+        return CLIENT_CALC_W
+
+    if _is_help_query(text):
+        await update.message.reply_text(t(lang, 'calc_dims_help'))
         return CLIENT_CALC_L
 
+    result = _parse_dims(text)
+    if result is None:
+        await update.message.reply_text(t(lang, 'calc_dims_error'))
+        return CLIENT_CALC_L
 
-async def calc_width(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = get_lang(context, update.effective_user.id)
-    try:
-        context.user_data['calc_w'] = float(update.message.text.replace(',', '.'))
-        await update.message.reply_text(t(lang, 'calc_enter_height'))
-        return CLIENT_CALC_H
-    except ValueError:
-        await update.message.reply_text(t(lang, 'invalid_number'))
-        return CLIENT_CALC_W2
+    l, w, h = result
+    context.user_data['calc_l'] = l
+    context.user_data['calc_w'] = w
+    context.user_data['calc_h'] = h
 
-
-async def calc_height(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = get_lang(context, update.effective_user.id)
-    try:
-        h = float(update.message.text.replace(',', '.'))
-        context.user_data['calc_h'] = h
-        await update.message.reply_text(
-            t(lang, 'calc_choose_country'),
-            reply_markup=country_keyboard(lang)
-        )
-        return CLIENT_CALC_COUNTRY
-    except ValueError:
-        await update.message.reply_text(t(lang, 'invalid_number'))
-        return CLIENT_CALC_H
+    # Show accepted confirmation
+    raw_input = text
+    await update.message.reply_text(
+        t(lang, 'calc_dims_accepted', input=raw_input, l=l, w=w, h=h)
+    )
+    await update.message.reply_text(
+        t(lang, 'calc_choose_country'),
+        reply_markup=country_keyboard(lang)
+    )
+    return CLIENT_CALC_COUNTRY
 
 
 async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -699,8 +765,8 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     calc_return = context.user_data.get('calc_return', 'SEND')
 
     if text in (t('ru', 'back'), t('en', 'back')):
-        await update.message.reply_text(t(lang, 'calc_enter_height'), reply_markup=back_keyboard(lang))
-        return CLIENT_CALC_H
+        await update.message.reply_text(t(lang, 'calc_enter_dims'), reply_markup=back_keyboard(lang))
+        return CLIENT_CALC_L
 
     country_map = {}
     for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
@@ -1665,13 +1731,7 @@ def main():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, calc_weight)
             ],
             CLIENT_CALC_L: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, calc_length)
-            ],
-            CLIENT_CALC_W2: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, calc_width)
-            ],
-            CLIENT_CALC_H: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, calc_height)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, calc_dims)
             ],
             CLIENT_CALC_COUNTRY: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, calc_country)
