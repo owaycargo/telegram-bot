@@ -7,7 +7,7 @@ Telegram бот для карго-сервиса OWAY Cargo. Доставка и
 - **Bot:** python-telegram-bot 20.8, ConversationHandler (42 states)
 - **Database:** SQLite (WAL mode)
 - **Server:** Flask 3.1.3, keep-alive + REST API, PORT 8080
-- **Mini App:** Telegram WebApp → client.owaycargo.com
+- **Client App:** client.owaycargo.com (Convex backend), opens as Telegram WebApp
 - **Deploy:** Railway (auto-deploy on push to `main`)
 - **Python:** 3.12
 
@@ -20,15 +20,13 @@ texts.py            — UI strings (RU, EN, KY, KK, UZ), t() function
 requirements.txt    — Dependencies
 runtime.txt         — Python 3.12
 Procfile            — Railway entry point
-miniapp/
-  index.html        — Mini App (Track, Prices, FAQ, Support)
-  images/           — Mascots + logos
+images/             — Mascots + logos
 docs/               — Business docs (see below)
 ```
 
 ## Features
 
-**Clients:** two types (ORDER/SEND), parcel tracking, price calculator (kg/lb, cm/in), shopping assistant (10% fee), US address via website ID, referral program, Mini App, 5 languages.
+**Clients:** two types (ORDER/SEND), parcel tracking, price calculator (kg/lb, cm/in), shopping assistant (10% fee), US address via website ID, referral program, client app (client.owaycargo.com), 5 languages.
 
 **Staff:** `/admin` (broadcast, stats, partners), `/partner` (accept parcels, weigh, tracking), `/driver` (deliveries, mark delivered).
 
@@ -43,7 +41,7 @@ docs/               — Business docs (see below)
 Railway auto-deploy on push to `main`.
 
 - **Public URL:** `telegram-bot-production-a466.up.railway.app`
-- **Mini App:** `https://client.owaycargo.com`
+- **Client App:** `https://client.owaycargo.com`
 - **Images:** `https://telegram-bot-production-a466.up.railway.app/images/<path>`
 
 ## Environment Variables
