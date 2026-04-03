@@ -8,7 +8,7 @@ from telegram.ext import (
     filters, ContextTypes, CallbackContext
 )
 import database as db
-from texts import t
+from texts import t, btn_all
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -314,11 +314,11 @@ async def lang_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif '🇬🇧' in text or 'English' in text:
         lang = 'en'
     elif '🇰🇬' in text or 'Кыргызча' in text:
-        lang = 'ru'   # Kyrgyz interface → Russian
+        lang = 'ky'
     elif '🇰🇿' in text or 'Қазақша' in text:
-        lang = 'ru'   # Kazakh interface → Russian
+        lang = 'kk'
     elif '🇺🇿' in text or "O'zbek" in text:
-        lang = 'ru'   # Uzbek interface → Russian
+        lang = 'uz'
     else:
         await update.message.reply_text(t('ru', 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
@@ -335,7 +335,7 @@ async def role_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text
 
-    if text in (t('ru', 'btn_client'), t('en', 'btn_client')):
+    if text in btn_all('btn_client'):
         client = db.get_client(update.effective_user.id)
         if client:
             context.user_data['lang'] = client['lang']
@@ -426,7 +426,7 @@ async def client_type_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text
 
-    if text in (t('ru', 'btn_order_type'), t('en', 'btn_order_type')):
+    if text in btn_all('btn_order_type'):
         db.set_client_type(update.effective_user.id, 'ORDER')
         client = db.get_client(update.effective_user.id)
         phone = client['phone'] if client else '—'
@@ -436,7 +436,7 @@ async def client_type_select(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_send_type'), t('en', 'btn_send_type')):
+    elif text in btn_all('btn_send_type'):
         db.set_client_type(update.effective_user.id, 'SEND')
         client = db.get_client(update.effective_user.id)
         phone = client['phone'] if client else '—'
@@ -461,16 +461,16 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     text = update.message.text
     client = db.get_client(update.effective_user.id)
 
-    if text in (t('ru', 'btn_track'), t('en', 'btn_track')):
+    if text in btn_all('btn_track'):
         await update.message.reply_text(t(lang, 'enter_tracking'), reply_markup=back_keyboard(lang))
         context.user_data['track_return'] = 'ORDER'
         return CLIENT_TRACK
 
-    elif text in (t('ru', 'btn_history'), t('en', 'btn_history')):
+    elif text in btn_all('btn_history'):
         await _show_history(update, context, lang, order_menu_keyboard(lang))
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_my_address'), t('en', 'btn_my_address')):
+    elif text in btn_all('btn_my_address'):
         # Check if website_id already set
         if client and client['website_id']:
             address = db.get_config('us_warehouse_address', db.DEFAULT_US_ADDRESS)
@@ -485,7 +485,7 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ADDRESS_VERIFY
 
-    elif text in (t('ru', 'btn_shopping'), t('en', 'btn_shopping')):
+    elif text in btn_all('btn_shopping'):
         await update.message.reply_text(
             t(lang, 'shopping_intro'),
             reply_markup=back_keyboard(lang)
@@ -493,7 +493,7 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(t(lang, 'shopping_enter_request'))
         return SHOPPING_REQUEST
 
-    elif text in (t('ru', 'btn_my_requests'), t('en', 'btn_my_requests')):
+    elif text in btn_all('btn_my_requests'):
         requests = db.get_client_shopping_requests(update.effective_user.id)
         if not requests:
             await update.message.reply_text(
@@ -518,26 +518,26 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(lines, reply_markup=order_menu_keyboard(lang))
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_calculator'), t('en', 'btn_calculator')):
+    elif text in btn_all('btn_calculator'):
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
         context.user_data['calc_return'] = 'ORDER'
         return CLIENT_CALC_W
 
-    elif text in (t('ru', 'btn_faq'), t('en', 'btn_faq')):
+    elif text in btn_all('btn_faq'):
         await update.message.reply_text(
             t(lang, 'faq_order'),
             reply_markup=order_menu_keyboard(lang)
         )
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_support'), t('en', 'btn_support')):
+    elif text in btn_all('btn_support'):
         await update.message.reply_text(
             t(lang, 'support_message'),
             reply_markup=order_menu_keyboard(lang)
         )
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_miniapp'), t('en', 'btn_miniapp')):
+    elif text in btn_all('btn_miniapp'):
         miniapp_url = db.get_config('miniapp_url', db.DEFAULT_MINIAPP_URL)
         await update.message.reply_text(
             "🌐 OWAY Cargo",
@@ -547,15 +547,15 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_referral'), t('en', 'btn_referral')):
+    elif text in btn_all('btn_referral'):
         await _show_referral(update, context, lang, order_menu_keyboard(lang))
         return ORDER_MENU
 
-    elif text in (t('ru', 'btn_change_lang'), t('en', 'btn_change_lang')):
+    elif text in btn_all('btn_change_lang'):
         await update.message.reply_text(t(lang, 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
 
-    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+    elif text in btn_all('main_menu'):
         return await start(update, context)
 
     else:
@@ -574,21 +574,21 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     client = db.get_client(update.effective_user.id)
 
-    if text in (t('ru', 'btn_track'), t('en', 'btn_track')):
+    if text in btn_all('btn_track'):
         await update.message.reply_text(t(lang, 'enter_tracking'), reply_markup=back_keyboard(lang))
         context.user_data['track_return'] = 'SEND'
         return CLIENT_TRACK
 
-    elif text in (t('ru', 'btn_history'), t('en', 'btn_history')):
+    elif text in btn_all('btn_history'):
         await _show_history(update, context, lang, send_menu_keyboard(lang))
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_calculator'), t('en', 'btn_calculator')):
+    elif text in btn_all('btn_calculator'):
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
         context.user_data['calc_return'] = 'SEND'
         return CLIENT_CALC_W
 
-    elif text in (t('ru', 'btn_find_dropoff'), t('en', 'btn_find_dropoff')):
+    elif text in btn_all('btn_find_dropoff'):
         # Show all partners (US drop-off points)
         partners = db.get_all_partners()
         if not partners:
@@ -600,21 +600,21 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text('\n'.join(lines), reply_markup=send_menu_keyboard(lang))
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_faq'), t('en', 'btn_faq')):
+    elif text in btn_all('btn_faq'):
         await update.message.reply_text(
             t(lang, 'faq_send'),
             reply_markup=send_menu_keyboard(lang)
         )
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_support'), t('en', 'btn_support')):
+    elif text in btn_all('btn_support'):
         await update.message.reply_text(
             t(lang, 'support_message'),
             reply_markup=send_menu_keyboard(lang)
         )
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_miniapp'), t('en', 'btn_miniapp')):
+    elif text in btn_all('btn_miniapp'):
         miniapp_url = db.get_config('miniapp_url', db.DEFAULT_MINIAPP_URL)
         await update.message.reply_text(
             "🌐 OWAY Cargo",
@@ -624,15 +624,15 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_referral'), t('en', 'btn_referral')):
+    elif text in btn_all('btn_referral'):
         await _show_referral(update, context, lang, send_menu_keyboard(lang))
         return SEND_MENU
 
-    elif text in (t('ru', 'btn_change_lang'), t('en', 'btn_change_lang')):
+    elif text in btn_all('btn_change_lang'):
         await update.message.reply_text(t(lang, 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
 
-    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+    elif text in btn_all('main_menu'):
         return await start(update, context)
 
     else:
@@ -718,7 +718,7 @@ async def client_track(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = order_menu_keyboard(lang) if track_return == 'ORDER' else send_menu_keyboard(lang)
     return_state = ORDER_MENU if track_return == 'ORDER' else SEND_MENU
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         phone = client['phone'] if client else '—'
         if track_return == 'ORDER':
             await update.message.reply_text(t(lang, 'order_menu', phone=phone), reply_markup=reply_markup)
@@ -824,7 +824,7 @@ async def calc_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         client = db.get_client(update.effective_user.id)
         calc_return = context.user_data.get('calc_return', 'SEND')
         phone = client['phone'] if client else '—'
@@ -858,7 +858,7 @@ async def calc_dims(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
         return CLIENT_CALC_W
 
@@ -894,17 +894,17 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     calc_return = context.user_data.get('calc_return', 'SEND')
 
     # Back → return to dims step
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'calc_enter_dims'), reply_markup=back_keyboard(lang))
         return CLIENT_CALC_L
 
     # "Recalculate" → restart from weight
-    if text in (t('ru', 'btn_recalculate'), t('en', 'btn_recalculate')):
+    if text in btn_all('btn_recalculate'):
         await update.message.reply_text(t(lang, 'calc_enter_weight'), reply_markup=back_keyboard(lang))
         return CLIENT_CALC_W
 
     # "Contact manager" → show support contacts and return to menu
-    if text in (t('ru', 'btn_contact_manager'), t('en', 'btn_contact_manager')):
+    if text in btn_all('btn_contact_manager'):
         client = db.get_client(update.effective_user.id)
         phone = client['phone'] if client else '—'
         await update.message.reply_text(t(lang, 'support_text'))
@@ -919,8 +919,8 @@ async def calc_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     country_map = {}
     for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
-        country_map[t('ru', f'country_{code}')] = code
-        country_map[t('en', f'country_{code}')] = code
+        for lbl in btn_all(f'country_{code}'):
+            country_map[lbl] = code
 
     chosen = country_map.get(text)
     if not chosen:
@@ -951,7 +951,7 @@ async def address_verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         client = db.get_client(update.effective_user.id)
         phone = client['phone'] if client else '—'
         await update.message.reply_text(
@@ -989,7 +989,7 @@ async def shopping_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         client = db.get_client(update.effective_user.id)
         phone = client['phone'] if client else '—'
         await update.message.reply_text(
@@ -1061,11 +1061,11 @@ async def partner_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     if not partner:
         return await start(update, context)
 
-    if text in (t('ru', 'btn_accept_parcel'), t('en', 'btn_accept_parcel')):
+    if text in btn_all('btn_accept_parcel'):
         await update.message.reply_text(t(lang, 'accept_send_photo'), reply_markup=back_keyboard(lang))
         return ACCEPT_PHOTO
 
-    elif text in (t('ru', 'btn_my_parcels'), t('en', 'btn_my_parcels')):
+    elif text in btn_all('btn_my_parcels'):
         parcels = db.get_partner_parcels(partner_id)
         if not parcels:
             await update.message.reply_text(t(lang, 'no_parcels_at_point'), reply_markup=partner_menu_keyboard(lang))
@@ -1080,7 +1080,7 @@ async def partner_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             await update.message.reply_text('\n'.join(lines), reply_markup=partner_menu_keyboard(lang))
         return PARTNER_MENU
 
-    elif text in (t('ru', 'btn_handoff'), t('en', 'btn_handoff')):
+    elif text in btn_all('btn_handoff'):
         pending = db.get_partner_parcels(partner_id, status='accepted')
         if not pending:
             await update.message.reply_text(t(lang, 'no_parcels_to_handoff'), reply_markup=partner_menu_keyboard(lang))
@@ -1092,7 +1092,7 @@ async def partner_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return HANDOFF_CONFIRM
 
-    elif text in (t('ru', 'btn_stats'), t('en', 'btn_stats')):
+    elif text in btn_all('btn_stats'):
         stats = db.get_partner_stats(partner_id)
         await update.message.reply_text(
             t(lang, 'partner_stats', **stats),
@@ -1100,7 +1100,7 @@ async def partner_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return PARTNER_MENU
 
-    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+    elif text in btn_all('main_menu'):
         return await start(update, context)
 
     else:
@@ -1116,7 +1116,7 @@ async def partner_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 async def accept_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
 
-    if update.message.text and update.message.text in (t('ru', 'back'), t('en', 'back')):
+    if update.message.text and update.message.text in btn_all('back'):
         partner_id = context.user_data.get('partner_id')
         partner = db.get_partner_by_id(partner_id) if partner_id else None
         await update.message.reply_text(
@@ -1139,7 +1139,7 @@ async def accept_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def accept_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
-    if update.message.text in (t('ru', 'back'), t('en', 'back')):
+    if update.message.text in btn_all('back'):
         await update.message.reply_text(t(lang, 'accept_send_photo'), reply_markup=back_keyboard(lang))
         return ACCEPT_PHOTO
     try:
@@ -1201,14 +1201,14 @@ async def accept_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'accept_enter_client_phone'), reply_markup=back_keyboard(lang))
         return ACCEPT_CLIENT_PHONE
 
     country_map = {}
     for code in db.DIRECT_COUNTRIES + db.TRANSIT_COUNTRIES:
-        country_map[t('ru', f'country_{code}')] = code
-        country_map[t('en', f'country_{code}')] = code
+        for lbl in btn_all(f'country_{code}'):
+            country_map[lbl] = code
 
     chosen = country_map.get(text)
     if not chosen:
@@ -1241,7 +1241,7 @@ async def accept_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text
 
-    if text not in (t('ru', 'btn_confirm'), t('en', 'btn_confirm')):
+    if text not in btn_all('btn_confirm'):
         partner_id = context.user_data.get('partner_id')
         partner = db.get_partner_by_id(partner_id) if partner_id else None
         await update.message.reply_text(
@@ -1309,7 +1309,7 @@ async def handoff_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     partner_id = context.user_data.get('partner_id')
     partner = db.get_partner_by_id(partner_id) if partner_id else None
 
-    if text not in (t('ru', 'btn_confirm'), t('en', 'btn_confirm')):
+    if text not in btn_all('btn_confirm'):
         await update.message.reply_text(
             t(lang, 'partner_menu',
               name=partner['name'] if partner else '—',
@@ -1361,7 +1361,7 @@ async def driver_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text
 
-    if text in (t('ru', 'btn_my_deliveries'), t('en', 'btn_my_deliveries')):
+    if text in btn_all('btn_my_deliveries'):
         parcels = db.get_parcels_for_driver()
         if not parcels:
             await update.message.reply_text(t(lang, 'no_deliveries'), reply_markup=driver_menu_keyboard(lang))
@@ -1373,11 +1373,11 @@ async def driver_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             await update.message.reply_text('\n'.join(lines), reply_markup=driver_menu_keyboard(lang))
         return DRIVER_MENU
 
-    elif text in (t('ru', 'btn_mark_delivered'), t('en', 'btn_mark_delivered')):
+    elif text in btn_all('btn_mark_delivered'):
         await update.message.reply_text(t(lang, 'driver_enter_tracking'), reply_markup=back_keyboard(lang))
         return DRIVER_DELIVER
 
-    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+    elif text in btn_all('main_menu'):
         return await start(update, context)
 
     else:
@@ -1389,7 +1389,7 @@ async def driver_deliver(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'driver_menu'), reply_markup=driver_menu_keyboard(lang))
         return DRIVER_MENU
 
@@ -1445,7 +1445,7 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not context.user_data.get('is_admin'):
         return await start(update, context)
 
-    if text in (t('ru', 'btn_network_stats'), t('en', 'btn_network_stats')):
+    if text in btn_all('btn_network_stats'):
         stats = db.get_network_stats()
         await update.message.reply_text(
             t(lang, 'network_stats', **stats),
@@ -1453,7 +1453,7 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ADMIN_MENU
 
-    elif text in (t('ru', 'btn_list_partners'), t('en', 'btn_list_partners')):
+    elif text in btn_all('btn_list_partners'):
         partners = db.get_all_partners()
         if not partners:
             await update.message.reply_text(t(lang, 'no_partners'), reply_markup=admin_menu_keyboard(lang))
@@ -1467,19 +1467,19 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.message.reply_text('\n'.join(lines), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
-    elif text in (t('ru', 'btn_add_partner'), t('en', 'btn_add_partner')):
+    elif text in btn_all('btn_add_partner'):
         await update.message.reply_text(t(lang, 'add_partner_name'), reply_markup=back_keyboard(lang))
         return ADD_PARTNER_NAME
 
-    elif text in (t('ru', 'btn_update_status'), t('en', 'btn_update_status')):
+    elif text in btn_all('btn_update_status'):
         await update.message.reply_text(t(lang, 'admin_enter_tracking'), reply_markup=back_keyboard(lang))
         return ADMIN_UPDATE_TRACKING
 
-    elif text in (t('ru', 'btn_broadcast'), t('en', 'btn_broadcast')):
+    elif text in btn_all('btn_broadcast'):
         await update.message.reply_text(t(lang, 'broadcast_enter_msg'), reply_markup=back_keyboard(lang))
         return ADMIN_BROADCAST
 
-    elif text in (t('ru', 'btn_set_address'), t('en', 'btn_set_address')):
+    elif text in btn_all('btn_set_address'):
         current = db.get_config('us_warehouse_address', db.DEFAULT_US_ADDRESS)
         await update.message.reply_text(
             t(lang, 'set_address_enter', current=current),
@@ -1487,11 +1487,11 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ADMIN_SET_ADDRESS
 
-    elif text in (t('ru', 'btn_add_website_user'), t('en', 'btn_add_website_user')):
+    elif text in btn_all('btn_add_website_user'):
         await update.message.reply_text(t(lang, 'add_wu_id_enter'), reply_markup=back_keyboard(lang))
         return ADMIN_ADD_WU_ID
 
-    elif text in (t('ru', 'btn_view_requests'), t('en', 'btn_view_requests')):
+    elif text in btn_all('btn_view_requests'):
         requests = db.get_new_shopping_requests()
         if not requests:
             await update.message.reply_text(t(lang, 'view_requests_empty'), reply_markup=admin_menu_keyboard(lang))
@@ -1507,14 +1507,14 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.message.reply_text('\n'.join(lines), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
-    elif text in (t('ru', 'btn_update_request'), t('en', 'btn_update_request')):
+    elif text in btn_all('btn_update_request'):
         await update.message.reply_text(
             t(lang, 'admin_update_request_enter_id'),
             reply_markup=back_keyboard(lang)
         )
         return ADMIN_UPDATE_REQUEST
 
-    elif text in (t('ru', 'main_menu'), t('en', 'main_menu')):
+    elif text in btn_all('main_menu'):
         return await start(update, context)
 
     else:
@@ -1524,7 +1524,7 @@ async def admin_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def add_partner_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
-    if update.message.text in (t('ru', 'back'), t('en', 'back')):
+    if update.message.text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
     context.user_data['new_partner_name'] = update.message.text.strip()
@@ -1561,7 +1561,7 @@ async def admin_update_tracking(update: Update, context: ContextTypes.DEFAULT_TY
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
@@ -1588,7 +1588,7 @@ async def admin_update_status(update: Update, context: ContextTypes.DEFAULT_TYPE
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
@@ -1660,21 +1660,20 @@ async def admin_update_request(update: Update, context: ContextTypes.DEFAULT_TYP
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
     # If we already have a request loaded — user is choosing a new status
     req_id = context.user_data.get('admin_req_id')
     if req_id:
-        status_map = {
-            t('ru', 'request_status_in_progress'): 'in_progress',
-            t('en', 'request_status_in_progress'): 'in_progress',
-            t('ru', 'request_status_done'): 'done',
-            t('en', 'request_status_done'): 'done',
-            t('ru', 'request_status_cancelled'): 'cancelled',
-            t('en', 'request_status_cancelled'): 'cancelled',
-        }
+        status_map = {}
+        for lbl in btn_all('request_status_in_progress'):
+            status_map[lbl] = 'in_progress'
+        for lbl in btn_all('request_status_done'):
+            status_map[lbl] = 'done'
+        for lbl in btn_all('request_status_cancelled'):
+            status_map[lbl] = 'cancelled'
         new_status = status_map.get(text)
         if not new_status:
             await update.message.reply_text(t(lang, 'invalid_input'), reply_markup=request_status_keyboard(lang))
@@ -1761,7 +1760,7 @@ async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
@@ -1788,7 +1787,7 @@ async def admin_set_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
@@ -1806,7 +1805,7 @@ async def admin_add_wu_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'admin_menu'), reply_markup=admin_menu_keyboard(lang))
         return ADMIN_MENU
 
@@ -1822,7 +1821,7 @@ async def admin_add_wu_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context, update.effective_user.id)
     text = update.message.text.strip()
 
-    if text in (t('ru', 'back'), t('en', 'back')):
+    if text in btn_all('back'):
         await update.message.reply_text(t(lang, 'add_wu_id_enter'), reply_markup=back_keyboard(lang))
         return ADMIN_ADD_WU_ID
 
