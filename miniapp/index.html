@@ -55,7 +55,15 @@
     .logo-block {
       display: flex;
       align-items: center;
-      gap: 0;
+      gap: 10px;
+    }
+    .header-logo-img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35);
+      object-fit: cover;
+      flex-shrink: 0;
     }
     .logo-text {
       font-size: 22px;
@@ -74,6 +82,52 @@
       margin-left: 5px;
       flex-shrink: 0;
     }
+
+    /* ── MASCOTS ── */
+    .hero { position: relative; overflow: hidden; }
+    .mascot-hero {
+      position: absolute;
+      right: -8px;
+      bottom: -12px;
+      height: 130px;
+      width: auto;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .hero-text { max-width: calc(100% - 120px); }
+
+    .calc-hero {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      color: white;
+      overflow: hidden;
+    }
+    .calc-hero img {
+      height: 90px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .calc-hero-text h2 { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .calc-hero-text p  { font-size: 12px; opacity: 0.85; line-height: 1.5; }
+
+    .support-mascot-img {
+      width: 100px;
+      height: auto;
+      display: block;
+      margin: 0 auto 8px;
+    }
+
+    .mascot-found {
+      text-align: center;
+      padding: 4px 0 0;
+    }
+    .mascot-found img { height: 70px; width: auto; }
     .header-sub {
       font-size: 12px;
       color: rgba(255,255,255,0.75);
@@ -616,6 +670,7 @@
   <div class="header">
     <div class="header-top">
       <div class="logo-block">
+        <img src="images/logos/Circle_Profil_Pic_OWAY-Cargo_Blue.png" class="header-logo-img" alt="OWAY Cargo" />
         <span class="logo-text">OWAY CARGO</span>
         <span class="logo-chevron"></span>
       </div>
@@ -636,8 +691,11 @@
   <div id="page-track" class="page active">
 
     <div class="hero">
-      <h2>Отследить посылку</h2>
-      <p>Введите трек-номер — узнайте где ваша посылка прямо сейчас</p>
+      <div class="hero-text">
+        <h2>Отследить посылку</h2>
+        <p>Введите трек-номер — узнайте где ваша посылка прямо сейчас</p>
+      </div>
+      <img src="images/mascots/mascot-wink.png" class="mascot-hero" alt="" />
     </div>
 
     <div class="card">
@@ -681,6 +739,10 @@
         </div>
       </div>
 
+      <div class="mascot-found">
+        <img src="images/mascots/mascot-party.png" alt="" />
+      </div>
+
       <div class="timeline" id="res-timeline"></div>
     </div>
 
@@ -690,6 +752,14 @@
   <!-- PAGE: CALCULATOR                        -->
   <!-- ═══════════════════════════════════════ -->
   <div id="page-calc" class="page">
+
+    <div class="calc-hero">
+      <img src="images/mascots/mascot-money.png" alt="" />
+      <div class="calc-hero-text">
+        <h2>Рассчитай доставку</h2>
+        <p>Узнай точную стоимость до твоей страны — быстро и без сюрпризов</p>
+      </div>
+    </div>
 
     <div class="card">
       <div class="card-title">Калькулятор стоимости</div>
@@ -950,7 +1020,7 @@
   <div id="page-support" class="page">
 
     <div class="card support-card">
-      <div class="support-avatar">👩‍💼</div>
+      <img src="images/mascots/mascot-love.png" class="support-mascot-img" alt="" />
       <div class="support-name">Менеджер СНГ</div>
       <div class="support-region">🇰🇬 Кыргызстан &nbsp;·&nbsp; 🇰🇿 Казахстан &nbsp;·&nbsp; 🇺🇿 Узбекистан</div>
       <a href="https://wa.me/996709969621" class="support-link whatsapp">
@@ -962,7 +1032,7 @@
     </div>
 
     <div class="card support-card">
-      <div class="support-avatar">👨‍💼</div>
+      <img src="images/mascots/mascot-wink.png" class="support-mascot-img" alt="" />
       <div class="support-name">Менеджер США</div>
       <div class="support-region">🇺🇸 United States</div>
       <a href="https://wa.me/12132766898" class="support-link whatsapp">

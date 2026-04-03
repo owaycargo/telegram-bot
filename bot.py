@@ -253,8 +253,18 @@ def menu_text_for_client(client, lang):
 
 # ──────────────────── /start ────────────────────
 
+MASCOT_WELCOME = os.path.join(os.path.dirname(__file__), 'miniapp', 'images', 'mascots', 'mascot-wink.png')
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
+
+    # Send mascot welcome image
+    if os.path.exists(MASCOT_WELCOME):
+        try:
+            with open(MASCOT_WELCOME, 'rb') as photo:
+                await update.message.reply_photo(photo=photo)
+        except Exception:
+            pass
 
     # Auto-detect language from Telegram profile; fallback to language selector
     # CIS language codes → Russian (ky=Kyrgyz, kk=Kazakh, uz=Uzbek)
@@ -1876,12 +1886,16 @@ def create_flask_app():
     @flask_app.route('/miniapp')
     def miniapp():
         """Serve the mini app HTML."""
-        import os
-        miniapp_path = os.path.join(os.path.dirname(__file__), 'miniapp', 'index.html')
-        if os.path.exists(miniapp_path):
-            with open(miniapp_path, 'r', encoding='utf-8') as f:
-                return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
-        return 'Mini App not found', 404
+        from flask import send_from_directory
+        miniapp_dir = os.path.join(os.path.dirname(__file__), 'miniapp')
+        return send_from_directory(miniapp_dir, 'index.html')
+
+    @flask_app.route('/images/<path:filename>')
+    def miniapp_images(filename):
+        """Serve static images for the mini app."""
+        from flask import send_from_directory
+        images_dir = os.path.join(os.path.dirname(__file__), 'miniapp', 'images')
+        return send_from_directory(images_dir, filename)
 
     return flask_app
 
