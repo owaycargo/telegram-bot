@@ -42,7 +42,7 @@ DEFAULT_US_ADDRESS = (
 )
 
 # Default Mini App URL placeholder
-DEFAULT_MINIAPP_URL = 'https://owaycargo.com'
+DEFAULT_MINIAPP_URL = 'https://client.owaycargo.com'
 
 
 def route_type_for_country(country_code: str) -> str:
