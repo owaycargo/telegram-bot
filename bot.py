@@ -54,7 +54,10 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '7486227402:AAH0zRC_kgrdzgu1dr8yryHoId6G
 # ──────────────────── Keyboards ────────────────────
 
 def lang_keyboard():
-    return ReplyKeyboardMarkup([['🇷🇺 Русский', '🇬🇧 English']], resize_keyboard=True, one_time_keyboard=True)
+    return ReplyKeyboardMarkup([
+        ['🇷🇺 Русский', '🇬🇧 English'],
+        ['🇰🇬 Кыргызча', '🇰🇿 Қазақша', '🇺🇿 O\'zbek'],
+    ], resize_keyboard=True, one_time_keyboard=True)
 
 
 def role_keyboard(lang):
@@ -266,29 +269,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
 
-    # Auto-detect language from Telegram profile; fallback to language selector
-    # CIS language codes → Russian (ky=Kyrgyz, kk=Kazakh, uz=Uzbek)
-    CIS_LANG_CODES = ('ru', 'ky', 'kk', 'uz')
-    tg_lang = (update.effective_user.language_code or '').lower()
-    if any(tg_lang.startswith(code) for code in CIS_LANG_CODES):
-        context.user_data['lang'] = 'ru'
-    elif tg_lang:
-        context.user_data['lang'] = 'en'
-    else:
-        # Can't detect — show language picker
-        await update.message.reply_text(
-            t('ru', 'choose_language'),
-            reply_markup=lang_keyboard()
-        )
-        return LANG_SELECT
-
-    lang = context.user_data['lang']
-
-    # If returning client — go straight to their menu
+    # Returning client — go straight to their menu (use their saved language)
     client = db.get_client(update.effective_user.id)
     if client:
-        context.user_data['lang'] = client['lang']
-        lang = client['lang']
+        lang = client['lang'] or 'ru'
+        context.user_data['lang'] = lang
         if client['client_type']:
             await update.message.reply_text(
                 t(lang, 'client_already_registered', name=client['name']),
@@ -302,11 +287,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return CLIENT_TYPE_SELECT
 
+    # New user — default Russian, show language selector
+    context.user_data['lang'] = 'ru'
     await update.message.reply_text(
-        t(lang, 'choose_role'),
-        reply_markup=role_keyboard(lang)
+        t('ru', 'choose_language'),
+        reply_markup=lang_keyboard()
     )
-    return ROLE_SELECT
+    return LANG_SELECT
 
 
 async def lang_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -315,6 +302,12 @@ async def lang_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang = 'ru'
     elif '🇬🇧' in text or 'English' in text:
         lang = 'en'
+    elif '🇰🇬' in text or 'Кыргызча' in text:
+        lang = 'ru'   # Kyrgyz interface → Russian
+    elif '🇰🇿' in text or 'Қазақша' in text:
+        lang = 'ru'   # Kazakh interface → Russian
+    elif '🇺🇿' in text or "O'zbek" in text:
+        lang = 'ru'   # Uzbek interface → Russian
     else:
         await update.message.reply_text(t('ru', 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT

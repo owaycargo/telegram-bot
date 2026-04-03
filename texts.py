@@ -1,7 +1,7 @@
 TEXTS = {
     'ru': {
         # General
-        'choose_language': 'Выберите язык / Choose language:',
+        'choose_language': '🌐 Выберите язык / Choose language:\n\n🇷🇺 Русский · 🇬🇧 English · 🇰🇬 Кыргызча · 🇰🇿 Қазақша · 🇺🇿 O\'zbek',
         'welcome': 'Добро пожаловать в OWAY Cargo! 🚚\nВыберите вашу роль:',
         'choose_role': 'Выберите роль:',
         'btn_client': '📦 Клиент',
@@ -453,7 +453,7 @@ TEXTS = {
 
     'en': {
         # General
-        'choose_language': 'Выберите язык / Choose language:',
+        'choose_language': '🌐 Выберите язык / Choose language:\n\n🇷🇺 Русский · 🇬🇧 English · 🇰🇬 Кыргызча · 🇰🇿 Қазақша · 🇺🇿 O\'zbek',
         'welcome': 'Welcome to OWAY Cargo! 🚚\nChoose your role:',
         'choose_role': 'Choose your role:',
         'btn_client': '📦 Client',
