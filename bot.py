@@ -2,7 +2,7 @@ import logging
 import threading
 import os
 from flask import Flask, jsonify, request as flask_request
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, ConversationHandler,
     filters, ContextTypes, CallbackContext
@@ -540,8 +540,10 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif text in (t('ru', 'btn_miniapp'), t('en', 'btn_miniapp')):
         miniapp_url = db.get_config('miniapp_url', db.DEFAULT_MINIAPP_URL)
         await update.message.reply_text(
-            f"🌐 OWAY Cargo Mini App:\n{miniapp_url}",
-            reply_markup=order_menu_keyboard(lang)
+            "🌐 OWAY Cargo",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("Открыть сайт →", web_app=WebAppInfo(url=miniapp_url))
+            ]])
         )
         return ORDER_MENU
 
@@ -615,8 +617,10 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text in (t('ru', 'btn_miniapp'), t('en', 'btn_miniapp')):
         miniapp_url = db.get_config('miniapp_url', db.DEFAULT_MINIAPP_URL)
         await update.message.reply_text(
-            f"🌐 OWAY Cargo Mini App:\n{miniapp_url}",
-            reply_markup=send_menu_keyboard(lang)
+            "🌐 OWAY Cargo",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("Открыть сайт →", web_app=WebAppInfo(url=miniapp_url))
+            ]])
         )
         return SEND_MENU
 

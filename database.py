@@ -42,7 +42,7 @@ DEFAULT_US_ADDRESS = (
 )
 
 # Default Mini App URL placeholder
-DEFAULT_MINIAPP_URL = 'https://telegram-bot-production-a466.up.railway.app/miniapp'
+DEFAULT_MINIAPP_URL = 'https://owaycargo.com'
 
 
 def route_type_for_country(country_code: str) -> str:
@@ -181,6 +181,8 @@ def init_db():
               ('us_warehouse_address', DEFAULT_US_ADDRESS))
     c.execute("INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)",
               ('miniapp_url', DEFAULT_MINIAPP_URL))
+    # Always keep miniapp_url pointing to the main website
+    c.execute("UPDATE config SET value=? WHERE key='miniapp_url'", (DEFAULT_MINIAPP_URL,))
 
     conn.commit()
     conn.close()
