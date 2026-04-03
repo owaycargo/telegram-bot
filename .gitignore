@@ -30,7 +30,7 @@ env/
 
 # IDE
 .idea/
-.vscode/
+# .vscode/ — committed for shared workspace settings
 *.swp
 *.swo
 

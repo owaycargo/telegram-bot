@@ -1,0 +1,6 @@
+{
+  "workbench.editorAssociations": {
+    "*.excalidraw.md": "editor.excalidraw",
+    "*.md": "vscode.markdown.preview.editor"
+  }
+}
