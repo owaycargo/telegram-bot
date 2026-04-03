@@ -162,8 +162,9 @@ def init_db():
             pass
 
     # Referral system migrations
+    # Note: SQLite does not support UNIQUE in ALTER TABLE ADD COLUMN — use index instead
     for col_def in [
-        "referral_code TEXT UNIQUE",
+        "referral_code TEXT",
         "referred_by TEXT",
         "ref_bonus_given INTEGER DEFAULT 0",
     ]:
@@ -171,6 +172,8 @@ def init_db():
             c.execute(f"ALTER TABLE clients ADD COLUMN {col_def}")
         except sqlite3.OperationalError:
             pass
+    # Unique index on referral_code (safe to run multiple times)
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_referral_code ON clients (referral_code)")
 
     # Seed defaults
     c.execute("INSERT OR IGNORE INTO partners (code, name, location) VALUES (?, ?, ?)",
