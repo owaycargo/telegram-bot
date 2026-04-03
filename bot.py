@@ -80,6 +80,7 @@ def order_menu_keyboard(lang):
         [t(lang, 'btn_my_address'), t(lang, 'btn_shopping')],
         [t(lang, 'btn_my_requests'), t(lang, 'btn_calculator')],
         [t(lang, 'btn_faq'), t(lang, 'btn_support')],
+        [t(lang, 'btn_referral')],
         [t(lang, 'btn_miniapp')],
         [t(lang, 'btn_change_lang'), t(lang, 'main_menu')],
     ], resize_keyboard=True)
@@ -90,6 +91,7 @@ def send_menu_keyboard(lang):
         [t(lang, 'btn_track'), t(lang, 'btn_history')],
         [t(lang, 'btn_calculator'), t(lang, 'btn_find_dropoff')],
         [t(lang, 'btn_faq'), t(lang, 'btn_support')],
+        [t(lang, 'btn_referral')],
         [t(lang, 'btn_miniapp')],
         [t(lang, 'btn_change_lang'), t(lang, 'main_menu')],
     ], resize_keyboard=True)
@@ -261,6 +263,15 @@ MASCOT_WELCOME = os.path.join(os.path.dirname(__file__), 'miniapp', 'images', 'm
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
 
+    # Capture referral code from deep link: t.me/bot?start=ref_XXXXXX
+    start_param = context.args[0] if context.args else ''
+    if start_param.startswith('ref_'):
+        ref_code = start_param[4:].upper()
+        # Don't let users refer themselves
+        referrer = db.get_client_by_referral_code(ref_code)
+        if referrer and referrer['telegram_id'] != update.effective_user.id:
+            context.user_data['referred_by'] = ref_code
+
     # Send mascot welcome image
     if os.path.exists(MASCOT_WELCOME):
         try:
@@ -391,6 +402,11 @@ async def client_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
         phone = '+' + phone
     name = context.user_data.get('reg_name', 'User')
     db.register_client(update.effective_user.id, name, phone, lang)
+
+    # Save referral source if came via referral link
+    referred_by = context.user_data.get('referred_by')
+    if referred_by:
+        db.set_referred_by(update.effective_user.id, referred_by)
 
     await update.message.reply_text(
         t(lang, 'client_registered', name=name),
@@ -529,6 +545,10 @@ async def order_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return ORDER_MENU
 
+    elif text in (t('ru', 'btn_referral'), t('en', 'btn_referral')):
+        await _show_referral(update, context, lang, order_menu_keyboard(lang))
+        return ORDER_MENU
+
     elif text in (t('ru', 'btn_change_lang'), t('en', 'btn_change_lang')):
         await update.message.reply_text(t(lang, 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
@@ -600,6 +620,10 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return SEND_MENU
 
+    elif text in (t('ru', 'btn_referral'), t('en', 'btn_referral')):
+        await _show_referral(update, context, lang, send_menu_keyboard(lang))
+        return SEND_MENU
+
     elif text in (t('ru', 'btn_change_lang'), t('en', 'btn_change_lang')):
         await update.message.reply_text(t(lang, 'choose_language'), reply_markup=lang_keyboard())
         return LANG_SELECT
@@ -614,6 +638,24 @@ async def send_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=send_menu_keyboard(lang)
         )
         return SEND_MENU
+
+
+# ──────────────────── REFERRAL HELPER ────────────────────
+
+async def _show_referral(update, context, lang, keyboard):
+    """Show the user their referral link and stats."""
+    user_id = update.effective_user.id
+    bot_username = (await context.bot.get_me()).username
+    ref_code = db.get_or_create_referral_code(user_id)
+    stats = db.get_referral_stats(user_id)
+    link = f"https://t.me/{bot_username}?start=ref_{ref_code}"
+    await update.message.reply_text(
+        t(lang, 'referral_info',
+          link=link,
+          invited=stats['invited'],
+          bonuses=stats['bonuses']),
+        reply_markup=keyboard
+    )
 
 
 # ──────────────────── SHARED HISTORY HELPER ────────────────────
@@ -1580,6 +1622,30 @@ async def admin_update_status(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
         except Exception as e:
             logger.warning(f"Could not notify client: {e}")
+
+        # Referral bonus: triggers only on delivered status
+        if chosen_status == 'delivered':
+            referrer = db.check_and_credit_referral(parcel['client_telegram_id'])
+            if referrer:
+                referred_client = db.get_client(parcel['client_telegram_id'])
+                referred_lang = referred_client['lang'] if referred_client else 'ru'
+                referrer_lang = referrer['lang'] if referrer else 'ru'
+                # Notify referrer — they earned 1 kg free
+                try:
+                    await context.bot.send_message(
+                        chat_id=referrer['telegram_id'],
+                        text=t(referrer_lang, 'notify_referral_bonus_referrer')
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not notify referrer: {e}")
+                # Notify referred client — they earned 10% off next order
+                try:
+                    await context.bot.send_message(
+                        chat_id=parcel['client_telegram_id'],
+                        text=t(referred_lang, 'notify_referral_bonus_referred')
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not notify referred client: {e}")
 
     return ADMIN_MENU
 

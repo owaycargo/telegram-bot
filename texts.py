@@ -48,6 +48,7 @@ TEXTS = {
         'btn_calculator': '💰 Калькулятор цены',
         'btn_support': '💬 Поддержка',
         'btn_change_lang': '🌐 Сменить язык',
+        'btn_referral': '👥 Пригласить друга',
         'btn_recalculate': '🔄 Рассчитать ещё раз',
         'btn_contact_manager': '📞 Связаться с менеджером',
 
@@ -166,6 +167,28 @@ TEXTS = {
             '🔢 Трек-номер: {tracking}\n'
             '📦 Новый статус: {status}\n\n'
             'Отслеживайте посылку в боте: /start'
+        ),
+        'referral_info': (
+            '👥 Пригласи друга — получите бонус оба!\n\n'
+            '🎁 Ты получишь: 1 кг бесплатной доставки\n'
+            '🎁 Друг получит: скидку 10% на первый заказ\n\n'
+            '⚠️ Бонус начисляется только после того как посылка друга доставлена — '
+            'никакого скама, всё честно.\n\n'
+            '🔗 Твоя личная ссылка:\n{link}\n\n'
+            '📊 Статистика:\n'
+            '• Приглашено друзей: {invited}\n'
+            '• Бонусов получено: {bonuses} кг'
+        ),
+        'notify_referral_bonus_referrer': (
+            '🎉 Твой друг получил посылку!\n\n'
+            'Тебе начислен бонус: +1 кг бесплатной доставки 🎁\n\n'
+            'Бонус будет применён к твоему следующему заказу автоматически. '
+            'Напомни менеджеру при оформлении.'
+        ),
+        'notify_referral_bonus_referred': (
+            '🎉 Поздравляем с первой доставкой!\n\n'
+            'Тебе начислен реферальный бонус: скидка 10% на следующий заказ 🎁\n\n'
+            'Напомни менеджеру при оформлении следующей посылки.'
         ),
         'notify_shopping_new': (
             '🛍 Новая заявка на покупку!\n\n'
@@ -618,6 +641,29 @@ TEXTS = {
             '🔢 Tracking: {tracking}\n'
             '📦 New status: {status}\n\n'
             'Track your parcel in the bot: /start'
+        ),
+        'btn_referral': '👥 Invite a Friend',
+        'referral_info': (
+            '👥 Invite a friend — you both get a bonus!\n\n'
+            '🎁 You get: 1 kg free shipping\n'
+            '🎁 Friend gets: 10% off first order\n\n'
+            '⚠️ Bonus is credited only after your friend\'s first parcel is delivered — '
+            'fair and transparent.\n\n'
+            '🔗 Your personal link:\n{link}\n\n'
+            '📊 Stats:\n'
+            '• Friends invited: {invited}\n'
+            '• Bonuses earned: {bonuses} kg'
+        ),
+        'notify_referral_bonus_referrer': (
+            '🎉 Your friend received their parcel!\n\n'
+            'Your bonus: +1 kg free shipping 🎁\n\n'
+            'The bonus will be applied to your next order. '
+            'Remind the manager when placing your next shipment.'
+        ),
+        'notify_referral_bonus_referred': (
+            '🎉 Congratulations on your first delivery!\n\n'
+            'Your referral bonus: 10% off your next order 🎁\n\n'
+            'Remind the manager when placing your next shipment.'
         ),
         'notify_shopping_new': (
             '🛍 New shopping request!\n\n'

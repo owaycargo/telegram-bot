@@ -161,6 +161,17 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+    # Referral system migrations
+    for col_def in [
+        "referral_code TEXT UNIQUE",
+        "referred_by TEXT",
+        "ref_bonus_given INTEGER DEFAULT 0",
+    ]:
+        try:
+            c.execute(f"ALTER TABLE clients ADD COLUMN {col_def}")
+        except sqlite3.OperationalError:
+            pass
+
     # Seed defaults
     c.execute("INSERT OR IGNORE INTO partners (code, name, location) VALUES (?, ?, ?)",
               ('DEMO001', 'Demo Point', 'Demo City, Demo Street 1'))
@@ -253,6 +264,102 @@ def register_client(telegram_id: int, name: str, phone: str, lang: str = 'ru') -
     row = conn.execute('SELECT * FROM clients WHERE telegram_id=?', (telegram_id,)).fetchone()
     conn.close()
     return row
+
+
+# ──────────────────── REFERRAL SYSTEM ────────────────────
+
+def _generate_ref_code() -> str:
+    """Generate a short unique referral code (6 chars, no ambiguous letters)."""
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    return ''.join(random.choices(chars, k=6))
+
+
+def get_or_create_referral_code(telegram_id: int) -> str:
+    """Return existing referral code or generate a new one for this client."""
+    conn = get_conn()
+    row = conn.execute('SELECT referral_code FROM clients WHERE telegram_id=?', (telegram_id,)).fetchone()
+    if row and row['referral_code']:
+        conn.close()
+        return row['referral_code']
+    # Generate unique code
+    for _ in range(10):
+        code = _generate_ref_code()
+        exists = conn.execute('SELECT 1 FROM clients WHERE referral_code=?', (code,)).fetchone()
+        if not exists:
+            conn.execute('UPDATE clients SET referral_code=? WHERE telegram_id=?', (code, telegram_id))
+            conn.commit()
+            conn.close()
+            return code
+    conn.close()
+    return ''
+
+
+def get_client_by_referral_code(code: str) -> Optional[sqlite3.Row]:
+    conn = get_conn()
+    row = conn.execute('SELECT * FROM clients WHERE referral_code=?', (code.upper(),)).fetchone()
+    conn.close()
+    return row
+
+
+def set_referred_by(telegram_id: int, referral_code: str):
+    """Save who invited this client (only if not already set)."""
+    conn = get_conn()
+    conn.execute(
+        'UPDATE clients SET referred_by=? WHERE telegram_id=? AND referred_by IS NULL',
+        (referral_code.upper(), telegram_id)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_referral_stats(telegram_id: int) -> dict:
+    """Return how many friends invited and how many bonuses earned."""
+    code = get_or_create_referral_code(telegram_id)
+    conn = get_conn()
+    invited = conn.execute(
+        'SELECT COUNT(*) AS cnt FROM clients WHERE referred_by=?', (code,)
+    ).fetchone()['cnt']
+    bonuses = conn.execute(
+        'SELECT COUNT(*) AS cnt FROM clients WHERE referred_by=? AND ref_bonus_given=1', (code,)
+    ).fetchone()['cnt']
+    conn.close()
+    return {'code': code, 'invited': invited, 'bonuses': bonuses}
+
+
+def check_and_credit_referral(parcel_client_telegram_id: int) -> Optional[sqlite3.Row]:
+    """
+    Called when a parcel is delivered.
+    If this is the referred client's FIRST delivered parcel and bonus not yet given:
+    - marks ref_bonus_given=1 on this client
+    - returns the referrer's row so bot can notify them.
+    Returns None if no referral or bonus already given.
+    """
+    conn = get_conn()
+    client = conn.execute(
+        'SELECT * FROM clients WHERE telegram_id=?', (parcel_client_telegram_id,)
+    ).fetchone()
+    if not client or not client['referred_by'] or client['ref_bonus_given']:
+        conn.close()
+        return None
+    # Count delivered parcels for this client
+    delivered_count = conn.execute(
+        "SELECT COUNT(*) AS cnt FROM parcels WHERE client_telegram_id=? AND status='delivered'",
+        (parcel_client_telegram_id,)
+    ).fetchone()['cnt']
+    if delivered_count != 1:
+        # Only trigger on the very first delivered parcel
+        conn.close()
+        return None
+    # Mark bonus as given
+    conn.execute(
+        'UPDATE clients SET ref_bonus_given=1 WHERE telegram_id=?', (parcel_client_telegram_id,)
+    )
+    conn.commit()
+    referrer = conn.execute(
+        'SELECT * FROM clients WHERE referral_code=?', (client['referred_by'],)
+    ).fetchone()
+    conn.close()
+    return referrer
 
 
 def set_client_type(telegram_id: int, client_type: str):
